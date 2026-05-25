@@ -1,0 +1,427 @@
+/* ----------------------------------------------------------------------
+ * Per-page initializers + reusable UI bits (Toast, Modal, Palette,
+ * Charts, Particles, DnD, etc.).
+ *
+ * `Components.mount(root)` is called whenever the router renders a
+ * page — it scans for `data-chart`, `data-mount`, etc. and wires them up.
+ * ---------------------------------------------------------------------- */
+(function (global) {
+  'use strict';
+
+  const I = (n, opts) => Icons.get(n, opts || {});
+
+  /* ── Toast ──────────────────────────────────────────────────────── */
+  function toast(kind, title, body, ttl) {
+    const host = document.getElementById('toast-host');
+    if (!host) return;
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + (kind || 'info');
+    el.innerHTML =
+      '<div class="grid place-items-center w-7 h-7 rounded-lg shrink-0" style="background:rgb(var(--' + (kind==='success'?'emerald':kind==='warn'?'amber':kind==='error'?'rose':'iris') + ')/.14);color:rgb(var(--' + (kind==='success'?'emerald':kind==='warn'?'amber':kind==='error'?'rose':'iris') + '))">'
+      + I(kind === 'success' ? 'check-circle' : kind === 'warn' ? 'alert-triangle' : kind === 'error' ? 'alert-circle' : 'info', { size: 16 })
+      + '</div>'
+      + '<div class="flex-1 pr-2"><div class="font-semibold text-sm">' + (title || 'Notice') + '</div>'
+      + (body ? '<div class="text-xs text-muted mt-1">' + body + '</div>' : '') + '</div>'
+      + '<button class="text-muted hover:text-iris" style="padding:0">' + I('x', { size: 14 }) + '</button>';
+    host.appendChild(el);
+    const dismiss = () => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(() => el.remove(), 200); };
+    el.querySelector('button').addEventListener('click', dismiss);
+    setTimeout(dismiss, ttl || 4500);
+  }
+
+  /* ── Modal ─────────────────────────────────────────────────────── */
+  function modal(opts) {
+    const host = document.getElementById('modal-host');
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML =
+      '<div class="modal-panel ' + (opts.size || '') + '">'
+      + (opts.title ? '<div class="modal-head"><h3>' + opts.title + '</h3><button class="btn btn-ghost btn-xs" data-close>' + I('x') + '</button></div>' : '')
+      + '<div class="modal-body">' + (opts.body || '') + '</div>'
+      + (opts.footer !== false ? '<div class="modal-foot">' + (opts.footer || '<button class="btn btn-secondary" data-close>Close</button>') + '</div>' : '')
+      + '</div>';
+    function close() {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 150);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
+    if (opts.onMount) opts.onMount(overlay, close);
+    document.addEventListener('keydown', onKey);
+    host.appendChild(overlay);
+    return close;
+  }
+
+  function confirmModal(opts) {
+    return modal({
+      size: 'sm',
+      title: opts.title || 'Confirm',
+      body: '<p class="text-sm">' + (opts.message || 'Are you sure?') + '</p>',
+      footer: '<button class="btn btn-secondary" data-close>' + (opts.cancelLabel || 'Cancel') + '</button>'
+            + '<button class="btn ' + (opts.destructive ? 'btn-danger' : 'btn-primary') + '" data-confirm>' + (opts.confirmLabel || 'Confirm') + '</button>',
+      onMount: (overlay, close) => {
+        overlay.querySelector('[data-confirm]').addEventListener('click', () => { (opts.onConfirm || (()=>{}))(); close(); });
+      },
+    });
+  }
+
+  /* ── Command palette ──────────────────────────────────────────── */
+  function openPalette() {
+    const close = modal({
+      title: 'Command palette',
+      size: 'md',
+      body:
+        '<div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">' + I('search') + '</span>'
+        + '<input id="palette-input" class="input" placeholder="Search anything…" style="padding-left:36px;height:44px"></div>'
+        + '<div id="palette-results" class="mt-3 max-h-[300px] overflow-y-auto"></div>'
+        + '<div class="mt-3 flex items-center justify-between text-[11px] text-muted"><span><span class="kbd">↑</span> <span class="kbd">↓</span> navigate · <span class="kbd">↵</span> open</span><span><span class="kbd">esc</span> close</span></div>',
+      footer: false,
+      onMount: (overlay, close) => {
+        const input = overlay.querySelector('#palette-input');
+        const out   = overlay.querySelector('#palette-results');
+        const items = [
+          ...DEMO.PALETTE_SUGGESTIONS,
+          ...(NAV || []).flatMap((s) => s.items.map((it) => ({ label: it.title, route: it.route, hint: s.titleKey?.split('.').pop() || '' }))),
+        ];
+        let sel = 0;
+        function render(q) {
+          const filtered = items.filter((it) => !q || it.label.toLowerCase().includes(q.toLowerCase())).slice(0, 12);
+          if (!filtered.length) { out.innerHTML = '<div class="text-center text-sm text-muted py-6">No matches</div>'; return; }
+          out.innerHTML = filtered.map((it, i) =>
+            '<a href="' + it.route + '" data-i="' + i + '" class="flex items-center gap-3 p-3 rounded-xl ' + (i === sel ? 'bg-[rgb(var(--iris-soft))]' : 'hover:bg-soft') + '">'
+            + '<span class="text-iris">' + I('arrow-right', { size: 14 }) + '</span>'
+            + '<span class="flex-1">' + it.label + '</span>'
+            + '<span class="pill pill-muted">' + it.hint + '</span>'
+            + '</a>'
+          ).join('');
+          out.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => close()));
+        }
+        render('');
+        input.addEventListener('input', () => { sel = 0; render(input.value); });
+        input.addEventListener('keydown', (e) => {
+          const items = out.querySelectorAll('a');
+          if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, items.length - 1); render(input.value); e.preventDefault(); }
+          if (e.key === 'ArrowUp')   { sel = Math.max(sel - 1, 0);                  render(input.value); e.preventDefault(); }
+          if (e.key === 'Enter') { items[sel]?.click(); }
+        });
+        setTimeout(() => input.focus(), 50);
+      },
+    });
+    return close;
+  }
+
+  /* ── Charts (pure SVG, no library) ─────────────────────────────── */
+  function chartLine(host, opts) {
+    opts = opts || {};
+    const w = opts.width || host.clientWidth || 600;
+    const h = opts.height || 240;
+    const data = opts.data || DEMO.REV;
+    const pad = 24;
+    const max = Math.max(...data), min = Math.min(...data);
+    const xs = data.map((_, i) => pad + (i * (w - pad * 2)) / (data.length - 1));
+    const ys = data.map((v) => h - pad - ((v - min) / Math.max(1, max - min)) * (h - pad * 2));
+    const path = xs.map((x, i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + ys[i].toFixed(1)).join(' ');
+    const area = path + ' L' + xs[xs.length - 1] + ' ' + (h - pad) + ' L' + xs[0] + ' ' + (h - pad) + ' Z';
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    host.innerHTML =
+      '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+      + '<defs>'
+      + '  <linearGradient id="gline" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed" stop-opacity=".35"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></linearGradient>'
+      + '  <linearGradient id="gstroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d846ef"/></linearGradient>'
+      + '</defs>'
+      + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
+      + '<path d="' + area + '" fill="url(#gline)"/>'
+      + '<path d="' + path + '" stroke="url(#gstroke)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      + xs.map((x, i) => '<circle cx="' + x + '" cy="' + ys[i] + '" r="3.5" fill="#fff" stroke="url(#gstroke)" stroke-width="2"/>').join('')
+      + '<g class="chart-axis">' + xs.map((x, i) => '<text x="' + x + '" y="' + (h - 6) + '" text-anchor="middle">' + months[i % 12] + '</text>').join('') + '</g>'
+      + '</svg>';
+  }
+
+  function chartBar(host) {
+    const data = [40, 65, 35, 80, 52, 90, 70];
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const w = host.clientWidth || 600, h = 240, pad = 28;
+    const bw = (w - pad * 2) / data.length * 0.6;
+    const gap = (w - pad * 2) / data.length;
+    const max = Math.max(...data);
+    host.innerHTML =
+      '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+      + '<defs><linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d846ef"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>'
+      + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
+      + data.map((v, i) => {
+          const bh = (v / max) * (h - pad * 2);
+          const x = pad + i * gap + (gap - bw) / 2;
+          const y = h - pad - bh;
+          return '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="6" fill="url(#gbar)"/>';
+        }).join('')
+      + '<g class="chart-axis">' + labels.map((l, i) => '<text x="' + (pad + i * gap + gap/2) + '" y="' + (h - 6) + '" text-anchor="middle">' + l + '</text>').join('') + '</g>'
+      + '</svg>';
+  }
+
+  function chartDonut(host, opts) {
+    opts = opts || {};
+    const data = opts.data || [
+      { label: 'Direct',   value: 38, color: '#7c3aed' },
+      { label: 'Organic',  value: 27, color: '#d846ef' },
+      { label: 'Referral', value: 18, color: '#22d3ee' },
+      { label: 'Social',   value: 12, color: '#10b981' },
+      { label: 'Other',    value:  5, color: '#f59e0b' },
+    ];
+    const total = data.reduce((a, b) => a + b.value, 0);
+    const r = 64, cx = 100, cy = 100, inner = 44;
+    let acc = -Math.PI / 2;
+    const arcs = data.map((d) => {
+      const ang = (d.value / total) * Math.PI * 2;
+      const a0 = acc, a1 = acc + ang; acc = a1;
+      const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+      const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+      const ix0 = cx + inner * Math.cos(a1), iy0 = cy + inner * Math.sin(a1);
+      const ix1 = cx + inner * Math.cos(a0), iy1 = cy + inner * Math.sin(a0);
+      const large = ang > Math.PI ? 1 : 0;
+      return '<path d="M' + x0 + ' ' + y0 + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1
+           + ' L' + ix0 + ' ' + iy0 + ' A' + inner + ' ' + inner + ' 0 ' + large + ' 0 ' + ix1 + ' ' + iy1 + ' Z" fill="' + d.color + '"/>';
+    }).join('');
+    host.innerHTML =
+      '<svg width="200" height="200" viewBox="0 0 200 200">' + arcs
+      + '<text x="100" y="96" text-anchor="middle" style="font-family:DM Sans;font-weight:700;font-size:22px" fill="rgb(var(--ink))">' + total + '%</text>'
+      + '<text x="100" y="115" text-anchor="middle" style="font-size:11px" fill="rgb(var(--muted))">distribution</text>'
+      + '</svg>'
+      + '<ul class="grid grid-cols-2 gap-1 mt-3 text-xs w-full">'
+      + data.map((d) => '<li class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:' + d.color + '"></span><span class="flex-1">' + d.label + '</span><span class="text-muted">' + d.value + '%</span></li>').join('')
+      + '</ul>';
+  }
+
+  function chartRadar(host) {
+    const data = [{ axis: 'Speed', v: 0.7 }, { axis: 'Memory', v: 0.6 }, { axis: 'A11y', v: 0.85 }, { axis: 'SEO', v: 0.9 }, { axis: 'Polish', v: 0.95 }, { axis: 'Docs', v: 0.65 }];
+    const cx = 120, cy = 120, R = 90;
+    const ang = (i) => (Math.PI * 2 * i) / data.length - Math.PI / 2;
+    const points = data.map((d, i) => [cx + d.v * R * Math.cos(ang(i)), cy + d.v * R * Math.sin(ang(i))]);
+    const rings = [0.25, 0.5, 0.75, 1].map((r) =>
+      '<polygon points="' + data.map((_, i) => (cx + r * R * Math.cos(ang(i))) + ',' + (cy + r * R * Math.sin(ang(i)))).join(' ') + '" fill="none" stroke="rgb(var(--line))" stroke-dasharray="2 3"/>'
+    ).join('');
+    const labels = data.map((d, i) => '<text x="' + (cx + (R + 14) * Math.cos(ang(i))) + '" y="' + (cy + (R + 14) * Math.sin(ang(i)) + 3) + '" text-anchor="middle" font-size="10" fill="rgb(var(--muted))">' + d.axis + '</text>').join('');
+    host.innerHTML =
+      '<svg width="260" height="260" viewBox="0 0 240 240">'
+      + rings
+      + '<polygon points="' + points.map(p => p.join(',')).join(' ') + '" fill="rgb(124 58 237 / .25)" stroke="rgb(124 58 237)" stroke-width="2"/>'
+      + points.map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="rgb(124 58 237)"/>').join('')
+      + labels
+      + '</svg>';
+  }
+
+  function chartArea(host) {
+    const w = host.clientWidth || 600, h = 220, pad = 22;
+    const a = DEMO.REV.map((v) => v * 0.85);
+    const b = DEMO.REV.map((v) => v * 0.55);
+    function path(d, fillId, stroke) {
+      const max = Math.max(...d), min = Math.min(...d);
+      const xs = d.map((_, i) => pad + (i * (w - pad * 2)) / (d.length - 1));
+      const ys = d.map((v) => h - pad - ((v - min) / Math.max(1, max - min)) * (h - pad * 2));
+      const p = xs.map((x, i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + ys[i].toFixed(1)).join(' ');
+      const area = p + ' L' + xs[xs.length - 1] + ' ' + (h - pad) + ' L' + xs[0] + ' ' + (h - pad) + ' Z';
+      return '<path d="' + area + '" fill="url(#' + fillId + ')"/><path d="' + p + '" stroke="' + stroke + '" stroke-width="2" fill="none"/>';
+    }
+    host.innerHTML =
+      '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+      + '<defs>'
+      + '  <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed" stop-opacity=".35"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></linearGradient>'
+      + '  <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".35"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient>'
+      + '</defs>'
+      + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
+      + path(a, 'ga', '#7c3aed')
+      + path(b, 'gb', '#22d3ee')
+      + '</svg>'
+      + '<div class="flex gap-4 text-xs mt-2 px-2"><span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm" style="background:#7c3aed"></span>Visitors</span>'
+      + '<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm" style="background:#22d3ee"></span>Sessions</span></div>';
+  }
+
+  /* ── Particle canvas ──────────────────────────────────────────── */
+  function particles(canvas) {
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    function resize() {
+      const r = canvas.getBoundingClientRect();
+      canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    resize();
+    const pts = Array.from({length: 90}, () => ({
+      x: Math.random() * canvas.width / dpr,
+      y: Math.random() * canvas.height / dpr,
+      vx: (Math.random() - .5) * .35,
+      vy: (Math.random() - .5) * .35,
+    }));
+    let raf;
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width / dpr, h = canvas.height / dpr;
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+      }
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const d = Math.hypot(dx, dy);
+          if (d < 110) {
+            ctx.strokeStyle = 'rgba(124, 58, 237,' + (.18 * (1 - d / 110)) + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
+          }
+        }
+      }
+      for (const p of pts) {
+        ctx.fillStyle = 'rgba(124, 58, 237, .65)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }
+
+  /* ── Drag & drop reorderable list ─────────────────────────────── */
+  function setupDnd(ul) {
+    let drag = null;
+    ul.querySelectorAll('li').forEach((li) => {
+      li.addEventListener('dragstart', () => { drag = li; li.style.opacity = '.4'; });
+      li.addEventListener('dragend',   () => { drag = null; li.style.opacity = '1'; });
+      li.addEventListener('dragover',  (e) => { e.preventDefault(); });
+      li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!drag || drag === li) return;
+        const rect = li.getBoundingClientRect();
+        const after = (e.clientY - rect.top) > rect.height / 2;
+        ul.insertBefore(drag, after ? li.nextSibling : li);
+      });
+    });
+  }
+
+  /* ── Misc click delegators (per-page) ─────────────────────────── */
+  function bindPage(root) {
+    /* Password toggle */
+    root.querySelectorAll('[data-act="toggle-pw"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const t = document.getElementById(btn.dataset.target);
+        if (!t) return;
+        const showing = t.type === 'text';
+        t.type = showing ? 'password' : 'text';
+        btn.innerHTML = Icons.get(showing ? 'eye' : 'eye-off', { size: 16 });
+      });
+    });
+    /* Toggle switches */
+    root.querySelectorAll('[data-toggle]').forEach((s) => {
+      s.addEventListener('click', () => s.classList.toggle('is-on'));
+    });
+    /* Checkboxes */
+    root.querySelectorAll('[data-check]').forEach((c) => {
+      c.addEventListener('click', () => c.classList.toggle('is-on'));
+    });
+    /* Radio groups */
+    root.querySelectorAll('[data-radio]').forEach((r) => {
+      r.addEventListener('click', () => {
+        const group = r.dataset.radio;
+        root.querySelectorAll('[data-radio="' + group + '"]').forEach((rr) => rr.classList.remove('is-on'));
+        r.classList.add('is-on');
+      });
+    });
+    /* Open modal */
+    root.querySelectorAll('[data-act="open-modal"]').forEach((b) => {
+      b.addEventListener('click', () => modal({
+        title: I18n.t('msg.modal.demo_title'),
+        size: b.dataset.size === 'sm' ? '' : b.dataset.size === 'lg' ? 'lg' : '',
+        body: '<p class="text-sm">' + I18n.t('msg.modal.demo_body') + '</p>',
+        footer: '<button class="btn btn-secondary" data-close>' + I18n.t('common.cancel') + '</button>'
+              + '<button class="btn btn-primary" data-close>' + I18n.t('common.confirm') + '</button>',
+      }));
+    });
+    root.querySelectorAll('[data-act="open-confirm"]').forEach((b) => {
+      b.addEventListener('click', () => confirmModal({
+        title: 'Delete project?',
+        message: 'This will permanently remove the project and all its data.',
+        confirmLabel: 'Delete',
+        destructive: true,
+        onConfirm: () => toast('success', 'Project deleted'),
+      }));
+    });
+    root.querySelectorAll('[data-act="open-prompt"]').forEach((b) => {
+      b.addEventListener('click', () => modal({
+        title: 'Rename',
+        body: '<label class="label">New name</label><input id="prompt-val" class="input" value="My project">',
+        footer: '<button class="btn btn-secondary" data-close>' + I18n.t('common.cancel') + '</button>'
+              + '<button class="btn btn-primary" data-act-2="ok">' + I18n.t('common.save') + '</button>',
+        onMount: (overlay, close) => {
+          overlay.querySelector('[data-act-2="ok"]').addEventListener('click', () => {
+            const v = overlay.querySelector('#prompt-val').value;
+            toast('success', 'Saved', 'Project name set to “' + v + '”');
+            close();
+          });
+        },
+      }));
+    });
+    /* Toast triggers */
+    root.querySelectorAll('[data-act="toast"]').forEach((b) => {
+      b.addEventListener('click', () => toast(b.dataset.kind, b.dataset.kind === 'error' ? 'Something went wrong' : 'Heads up', I18n.t('msg.toast.demo')));
+    });
+    /* Palette */
+    root.querySelectorAll('[data-act="open-palette"]').forEach((b) => b.addEventListener('click', openPalette));
+    /* Copy buttons */
+    root.querySelectorAll('[data-act="copy"]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(b.dataset.copy); toast('success', I18n.t('common.copied'), b.dataset.copy); }
+        catch { toast('error', 'Copy failed', 'Your browser blocked clipboard access.'); }
+      });
+    });
+    /* Lang switch (inside i18n page) */
+    root.querySelectorAll('[data-act="set-lang"]').forEach((b) => {
+      b.addEventListener('click', () => I18n.setLang(b.dataset.lang));
+    });
+    /* Live theme tokens */
+    root.querySelectorAll('[data-theme-token]').forEach((inp) => {
+      inp.addEventListener('input', () => {
+        const hex = inp.value;
+        const rgb = [parseInt(hex.substr(1,2),16), parseInt(hex.substr(3,2),16), parseInt(hex.substr(5,2),16)].join(' ');
+        document.documentElement.style.setProperty('--' + inp.dataset.themeToken, rgb);
+        try { localStorage.setItem('vgf26-tok-' + inp.dataset.themeToken, rgb); } catch (_) {}
+      });
+    });
+    /* Rating stars */
+    root.querySelectorAll('[data-rating]').forEach((g) => {
+      const out = root.querySelector('[data-rating-out]');
+      g.querySelectorAll('button').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          const v = +btn.dataset.v;
+          g.querySelectorAll('button').forEach((b2, j) => { b2.style.opacity = j < v ? '1' : '.35'; });
+          if (out) out.textContent = v + ' / 5';
+        });
+      });
+    });
+    /* DnD list */
+    const dnd = root.querySelector('#dnd-list');
+    if (dnd) setupDnd(dnd);
+    /* Charts */
+    root.querySelectorAll('[data-chart]').forEach((host) => {
+      const kind = host.dataset.chart;
+      requestAnimationFrame(() => {
+        if (kind === 'line-revenue' || kind === 'line-revenue-lg') chartLine(host, { height: kind.endsWith('lg') ? 280 : 220 });
+        else if (kind === 'bar-sales')        chartBar(host);
+        else if (kind === 'donut-channels' || kind === 'donut-channels-lg') chartDonut(host);
+        else if (kind === 'donut-plans')      chartDonut(host, { data: [
+          { label: 'Pro',        value: 58, color: '#7c3aed' },
+          { label: 'Starter',    value: 26, color: '#22d3ee' },
+          { label: 'Enterprise', value: 16, color: '#d846ef' },
+        ]});
+        else if (kind === 'radar-skills')     chartRadar(host);
+        else if (kind === 'area-compare')     chartArea(host);
+      });
+    });
+    /* Particles */
+    root.querySelectorAll('[data-canvas="particles"]').forEach(particles);
+  }
+
+  global.Components = { mount: bindPage, toast, modal, confirmModal, openPalette };
+})(window);
