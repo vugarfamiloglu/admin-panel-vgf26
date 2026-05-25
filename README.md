@@ -192,6 +192,12 @@ coalescing, template literals) is used throughout.
 
 ---
 
+## Screenshots
+
+<img width="1919" height="912" alt="light" src="https://github.com/user-attachments/assets/89616061-61f1-4fc7-8b06-b4a96cdb1dd1" />
+
+<img width="1919" height="911" alt="dark" src="https://github.com/user-attachments/assets/9912c0e5-1a89-4b6d-a271-c6d18ea86da4" />
+
 ## License
 
 MIT © 2026 Vugar Familoglu — see `LICENSE`.
