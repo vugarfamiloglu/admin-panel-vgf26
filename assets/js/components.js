@@ -135,7 +135,7 @@
       + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
       + '<path d="' + area + '" fill="url(#gline)"/>'
       + '<path d="' + path + '" stroke="url(#gstroke)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-      + xs.map((x, i) => '<circle cx="' + x + '" cy="' + ys[i] + '" r="3.5" fill="#fff" stroke="url(#gstroke)" stroke-width="2"/>').join('')
+      + xs.map((x, i) => '<circle class="chart-point" cx="' + x + '" cy="' + ys[i] + '" r="4" fill="#fff" stroke="url(#gstroke)" stroke-width="2" data-v="$' + data[i].toLocaleString() + '" data-l="' + months[i % 12] + ' 2026"/>').join('')
       + '<g class="chart-axis">' + xs.map((x, i) => '<text x="' + x + '" y="' + (h - 6) + '" text-anchor="middle">' + months[i % 12] + '</text>').join('') + '</g>'
       + '</svg>';
   }
@@ -155,7 +155,7 @@
           const bh = (v / max) * (h - pad * 2);
           const x = pad + i * gap + (gap - bw) / 2;
           const y = h - pad - bh;
-          return '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="6" fill="url(#gbar)"/>';
+          return '<rect class="chart-bar" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="6" fill="url(#gbar)" data-v="' + v + '" data-l="' + labels[i] + '"/>';
         }).join('')
       + '<g class="chart-axis">' + labels.map((l, i) => '<text x="' + (pad + i * gap + gap/2) + '" y="' + (h - 6) + '" text-anchor="middle">' + l + '</text>').join('') + '</g>'
       + '</svg>';
@@ -181,8 +181,8 @@
       const ix0 = cx + inner * Math.cos(a1), iy0 = cy + inner * Math.sin(a1);
       const ix1 = cx + inner * Math.cos(a0), iy1 = cy + inner * Math.sin(a0);
       const large = ang > Math.PI ? 1 : 0;
-      return '<path d="M' + x0 + ' ' + y0 + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1
-           + ' L' + ix0 + ' ' + iy0 + ' A' + inner + ' ' + inner + ' 0 ' + large + ' 0 ' + ix1 + ' ' + iy1 + ' Z" fill="' + d.color + '"/>';
+      return '<path class="chart-slice" d="M' + x0 + ' ' + y0 + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1
+           + ' L' + ix0 + ' ' + iy0 + ' A' + inner + ' ' + inner + ' 0 ' + large + ' 0 ' + ix1 + ' ' + iy1 + ' Z" fill="' + d.color + '" data-v="' + d.value + '" data-l="' + d.label + '"/>';
     }).join('');
     host.innerHTML =
       '<svg width="200" height="200" viewBox="0 0 200 200">' + arcs
@@ -486,5 +486,310 @@
     tick();
   }
 
-  global.Components = { mount: bindPage, toast, modal, confirmModal, openPalette };
+  /* ── Dropdown menus (anchored to a button) ─────────────────────── */
+  function dropdown(opts) {
+    /* Close any open dropdown first. */
+    document.querySelectorAll('.dropdown-panel').forEach((p) => p.remove());
+
+    const anchor = opts.anchor;
+    if (!anchor) return () => {};
+    const r = anchor.getBoundingClientRect();
+    const panel = document.createElement('div');
+    panel.className = 'dropdown-panel';
+    panel.style.minWidth = (opts.width || 300) + 'px';
+    if (opts.maxWidth) panel.style.maxWidth = opts.maxWidth + 'px';
+    panel.innerHTML = opts.body || '';
+    document.body.appendChild(panel);
+
+    /* Position — default below-right. Flip if overflowing. */
+    const pw = panel.offsetWidth, ph = panel.offsetHeight;
+    const align = opts.align || 'right';
+    let top  = r.bottom + 8;
+    let left = align === 'right' ? r.right - pw : r.left;
+    if (left < 8) left = 8;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (top + ph > window.innerHeight - 8) top = r.top - ph - 8;
+    panel.style.top = top + 'px';
+    panel.style.left = left + 'px';
+
+    function close() {
+      document.removeEventListener('mousedown', onDoc, true);
+      document.removeEventListener('keydown', onKey);
+      panel.style.animation = 'dd-in .12s reverse';
+      setTimeout(() => panel.remove(), 110);
+    }
+    function onDoc(e) {
+      if (!panel.contains(e.target) && !anchor.contains(e.target)) close();
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('mousedown', onDoc, true);
+    document.addEventListener('keydown', onKey);
+    if (opts.onMount) opts.onMount(panel, close);
+    return close;
+  }
+
+  /* ── Chart hover tooltip helper ────────────────────────────────── */
+  function ensureTip(host) {
+    let tip = host.querySelector('.chart-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.className = 'chart-tip';
+      host.appendChild(tip);
+    }
+    return tip;
+  }
+
+  /* ── Tree view (recursive, expand/collapse, keyboard nav) ─────── */
+  function bindTree(host) {
+    host.querySelectorAll('.tree-row').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        host.querySelectorAll('.tree-row.is-active').forEach((r) => r.classList.remove('is-active'));
+        row.classList.add('is-active');
+        const node = row.closest('.tree-node');
+        const children = node.querySelector(':scope > .tree-children');
+        if (children) {
+          const open = node.classList.toggle('is-open');
+          children.style.display = open ? '' : 'none';
+          const caret = row.querySelector('.tree-caret');
+          if (caret) caret.classList.toggle('is-open', open);
+        }
+      });
+    });
+  }
+
+  /* ── XMind-style mind map ──────────────────────────────────────── *
+   * Builds an absolutely-positioned tree from a JS object.  Click any
+   * node to collapse / expand its subtree.  SVG bezier connectors are
+   * redrawn after every expand. */
+  function buildMindMap(host, root) {
+    const canvas = document.createElement('div');
+    canvas.className = 'mm-canvas';
+    host.appendChild(canvas);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    host.insertBefore(svg, canvas);
+
+    const nodes = []; /* { dom, data, side, level, parent } */
+    const NODE_H = 38; /* approximate */
+    const COL_GAP = 60;
+
+    /* Split children alternately to left/right of root for radial feel. */
+    function side(i) { return i % 2 === 0 ? 'right' : 'left'; }
+
+    function createNode(data, level, parent, sideOf) {
+      const el = document.createElement('div');
+      el.className = 'mm-node';
+      if (level === 0) el.classList.add('mm-root');
+      if (level === 1) el.classList.add('mm-l1');
+      if (data.color) el.setAttribute('data-color', data.color);
+      el.innerHTML = '<span>' + data.label + '</span>'
+        + (data.children && data.children.length ? '<span class="mm-toggle">−</span>' : '');
+      el.dataset.collapsed = '0';
+      canvas.appendChild(el);
+      const obj = { dom: el, data, level, parent, side: sideOf, children: [] };
+      if (parent) parent.children.push(obj);
+      nodes.push(obj);
+      if (data.children) data.children.forEach((c, i) => createNode(c, level + 1, obj, level === 0 ? side(i) : sideOf));
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!data.children || !data.children.length) return;
+        const collapsed = el.dataset.collapsed === '1';
+        el.dataset.collapsed = collapsed ? '0' : '1';
+        el.classList.toggle('mm-collapsed', !collapsed);
+        layout();
+      });
+      return obj;
+    }
+
+    function isVisible(n) {
+      let p = n.parent;
+      while (p) {
+        if (p.dom.dataset.collapsed === '1') return false;
+        p = p.parent;
+      }
+      return true;
+    }
+
+    /* Compute layout — split into left and right subtrees, then walk each. */
+    function layout() {
+      /* Determine subtree height (# of leaves * row height) for each visible node. */
+      function leafCount(n) {
+        if (!n.children.length || n.dom.dataset.collapsed === '1') return 1;
+        return n.children.reduce((a, c) => a + leafCount(c), 0);
+      }
+      const root = nodes[0];
+      const rightKids = root.children.filter((k) => k.side === 'right');
+      const leftKids  = root.children.filter((k) => k.side === 'left');
+
+      const rightH = rightKids.reduce((a, c) => a + leafCount(c), 0);
+      const leftH  = leftKids.reduce((a, c) => a + leafCount(c), 0);
+      const totalH = Math.max(rightH, leftH, 1) * (NODE_H + 12);
+      const rootY = totalH / 2 + 40;
+
+      /* Centre the canvas. */
+      const rootW = root.dom.offsetWidth || 160;
+      const cx = host.clientWidth / 2;
+      root.dom.style.left = (cx - rootW / 2) + 'px';
+      root.dom.style.top  = (rootY - 19) + 'px';
+
+      let cursor = 40;
+      function placeSubtree(n, x, baseY) {
+        const w = n.dom.offsetWidth || 140;
+        n.dom.style.left = (n.side === 'right' ? x : x - w) + 'px';
+        n.dom.style.top  = baseY + 'px';
+        if (n.dom.dataset.collapsed === '1' || !n.children.length) return baseY + NODE_H + 12;
+        let y = baseY - (leafCount(n) - 1) * (NODE_H + 12) / 2 + (NODE_H + 12) / 2;
+        n.children.forEach((c) => {
+          const ny = placeSubtree(c, n.side === 'right' ? x + w + COL_GAP : x - w - COL_GAP, y - NODE_H / 2);
+          y = ny + 6;
+        });
+        return y;
+      }
+
+      let ry = rootY - (rightH * (NODE_H + 12)) / 2 + (NODE_H + 12) / 2;
+      rightKids.forEach((k) => { ry = placeSubtree(k, cx + rootW / 2 + COL_GAP, ry - NODE_H / 2); ry += 6; });
+
+      let ly = rootY - (leftH * (NODE_H + 12)) / 2 + (NODE_H + 12) / 2;
+      leftKids.forEach((k) => { ly = placeSubtree(k, cx - rootW / 2 - COL_GAP, ly - NODE_H / 2); ly += 6; });
+
+      /* Hide / show invisible descendants. */
+      nodes.forEach((n) => { n.dom.style.display = isVisible(n) ? '' : 'none'; });
+
+      /* Set canvas height. */
+      const maxBottom = Math.max(...nodes.filter(isVisible).map((n) => parseFloat(n.dom.style.top || 0) + NODE_H)) + 40;
+      canvas.style.height = maxBottom + 'px';
+      host.style.minHeight = Math.max(520, maxBottom) + 'px';
+
+      /* Draw connectors. */
+      svg.setAttribute('width', host.scrollWidth);
+      svg.setAttribute('height', maxBottom);
+      svg.innerHTML = '<defs><linearGradient id="mm-conn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#d846ef" stop-opacity=".55"/></linearGradient></defs>';
+      nodes.forEach((n) => {
+        if (!n.parent || !isVisible(n)) return;
+        const pr = n.parent.dom.getBoundingClientRect();
+        const hr = host.getBoundingClientRect();
+        const cr = n.dom.getBoundingClientRect();
+        const x1 = n.side === 'right' ? pr.right - hr.left + host.scrollLeft : pr.left - hr.left + host.scrollLeft;
+        const y1 = pr.top + pr.height / 2 - hr.top + host.scrollTop;
+        const x2 = n.side === 'right' ? cr.left - hr.left + host.scrollLeft : cr.right - hr.left + host.scrollLeft;
+        const y2 = cr.top + cr.height / 2 - hr.top + host.scrollTop;
+        const cx1 = (x1 + x2) / 2;
+        const path = 'M' + x1 + ' ' + y1 + ' C ' + cx1 + ' ' + y1 + ', ' + cx1 + ' ' + y2 + ', ' + x2 + ' ' + y2;
+        const p = document.createElementNS(svgNS, 'path');
+        p.setAttribute('d', path);
+        p.setAttribute('stroke', 'url(#mm-conn)');
+        p.setAttribute('stroke-width', n.level === 1 ? '2.5' : '1.5');
+        p.setAttribute('fill', 'none');
+        svg.appendChild(p);
+      });
+    }
+
+    createNode(root, 0, null, 'right');
+    /* layout twice — first pass measures, second pass uses measured widths. */
+    requestAnimationFrame(() => { layout(); requestAnimationFrame(layout); });
+    window.addEventListener('resize', () => layout());
+  }
+
+  /* ── Extend bindPage with the new behaviours ───────────────────── */
+  const originalBindPage = bindPage;
+  function bindPageExtended(root) {
+    originalBindPage(root);
+
+    /* Tree views */
+    root.querySelectorAll('[data-mount="tree"]').forEach(bindTree);
+
+    /* MindMap */
+    root.querySelectorAll('[data-mount="mindmap"]').forEach((host) => {
+      const data = MINDMAP_DATA;
+      buildMindMap(host, data);
+    });
+
+    /* Hookup chart tooltips for line + bar + donut charts */
+    root.querySelectorAll('[data-chart]').forEach((host) => {
+      host.classList.add('chart-host');
+      const tip = ensureTip(host);
+      host.querySelectorAll('.chart-point').forEach((pt) => {
+        pt.addEventListener('mousemove', (e) => {
+          const r = host.getBoundingClientRect();
+          tip.style.left = (e.clientX - r.left) + 'px';
+          tip.style.top  = (e.clientY - r.top) + 'px';
+          tip.innerHTML  = '<strong>' + pt.dataset.v + '</strong><span>' + pt.dataset.l + '</span>';
+          tip.classList.add('is-on');
+        });
+        pt.addEventListener('mouseleave', () => tip.classList.remove('is-on'));
+      });
+      host.querySelectorAll('.chart-bar').forEach((b) => {
+        b.addEventListener('mousemove', (e) => {
+          const r = host.getBoundingClientRect();
+          tip.style.left = (e.clientX - r.left) + 'px';
+          tip.style.top  = (e.clientY - r.top) + 'px';
+          tip.innerHTML  = '<strong>' + b.dataset.v + '</strong><span>' + b.dataset.l + '</span>';
+          tip.classList.add('is-on');
+        });
+        b.addEventListener('mouseleave', () => tip.classList.remove('is-on'));
+      });
+      host.querySelectorAll('.chart-slice').forEach((s) => {
+        s.addEventListener('mousemove', (e) => {
+          const r = host.getBoundingClientRect();
+          tip.style.left = (e.clientX - r.left) + 'px';
+          tip.style.top  = (e.clientY - r.top) + 'px';
+          tip.innerHTML  = '<strong>' + s.dataset.v + '%</strong><span>' + s.dataset.l + '</span>';
+          tip.classList.add('is-on');
+        });
+        s.addEventListener('mouseleave', () => tip.classList.remove('is-on'));
+      });
+      /* Heatmap cells (calendar / GitHub) */
+      host.querySelectorAll('.gh-cell, .cal-cell').forEach((cell) => {
+        cell.addEventListener('mousemove', (e) => {
+          const r = host.getBoundingClientRect();
+          tip.style.left = (e.clientX - r.left) + 'px';
+          tip.style.top  = (e.clientY - r.top) + 'px';
+          tip.innerHTML  = '<strong>' + (cell.dataset.v || '0') + ' commits</strong><span>' + (cell.dataset.l || '') + '</span>';
+          tip.classList.add('is-on');
+        });
+        cell.addEventListener('mouseleave', () => tip.classList.remove('is-on'));
+      });
+    });
+
+    /* Heart toggle on Airbnb cards */
+    root.querySelectorAll('[data-act="heart"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        btn.classList.toggle('is-fav');
+        btn.innerHTML = Icons.get('heart', { size: 18 });
+      });
+    });
+  }
+
+  /* Mind map default data (used by Whiteboard page). */
+  const MINDMAP_DATA = {
+    label: 'VGF26 Studio',
+    children: [
+      { label: 'Design System', color: 'iris', children: [
+        { label: 'Tokens', children: [{ label: 'Colors' }, { label: 'Spacing' }, { label: 'Radius' }] },
+        { label: 'Typography', children: [{ label: 'DM Sans' }, { label: 'Inter' }, { label: 'JetBrains Mono' }] },
+        { label: 'Themes', children: [{ label: 'Light' }, { label: 'Dark' }, { label: 'Custom' }] },
+      ]},
+      { label: 'Components', color: 'fuchsia', children: [
+        { label: 'Cards (20)' }, { label: 'Forms' }, { label: 'Charts' }, { label: 'Tables' },
+      ]},
+      { label: 'i18n', color: 'cyan', children: [
+        { label: '🇦🇿 Azerbaijani' }, { label: '🇬🇧 English' }, { label: '🇷🇺 Russian' },
+      ]},
+      { label: 'Icons (140+)', color: 'emerald', children: [
+        { label: 'Layout' }, { label: 'Data' }, { label: 'Social' },
+      ]},
+      { label: 'Effects', color: 'amber', children: [
+        { label: 'Glass' }, { label: 'Aurora' }, { label: 'Particles' }, { label: 'Confetti' },
+      ]},
+      { label: 'Dashboards', color: 'rose', children: [
+        { label: 'Analytics' }, { label: 'CRM' }, { label: 'Crypto' }, { label: 'IoT' },
+      ]},
+    ],
+  };
+
+  global.Components = { mount: bindPageExtended, toast, modal, confirmModal, openPalette, dropdown };
 })(window);

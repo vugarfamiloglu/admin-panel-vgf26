@@ -44,7 +44,7 @@
         { id: 'lists',          title: 'Lists · 14 variants',          route: '#/lists',          icon: 'list',  badge: '14' },
         { id: 'tables',         title: 'Tables · 8 variants',          route: '#/tables',         icon: 'table', badge: '8' },
         { id: 'kanban',         title: 'Kanban Board',                 route: '#/kanban',         icon: 'kanban' },
-        { id: 'tree',           title: 'Tree View',                    route: '#/lists#tree',     icon: 'tree' },
+        { id: 'tree',           title: 'Tree View',                    route: '#/tree',           icon: 'tree' },
         { id: 'timeline',       title: 'Timeline · Activity feed',     route: '#/timeline',       icon: 'history' },
         { id: 'pagination',     title: 'Pagination + Infinite scroll', route: '#/pagination',     icon: 'more-horizontal' },
         { id: 'avatars',        title: 'Avatars · Stacks · Groups',    route: '#/avatars',        icon: 'users' },

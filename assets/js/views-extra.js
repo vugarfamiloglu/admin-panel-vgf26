@@ -284,6 +284,89 @@
   /* ────────────────────────────────────────────────────────────────
    * KANBAN / TIMELINE (standalone)
    * ──────────────────────────────────────────────────────────────── */
+  function viewTree() {
+    /* Recursive helper — flag `open` decides whether a folder starts expanded. */
+    function renderNode(n, depth) {
+      const isFolder = !!(n.children && n.children.length);
+      const open = n.open !== false && depth < 2;
+      return ''
+        + '<li class="tree-node' + (open ? ' is-open' : '') + '">'
+        + '  <div class="tree-row">'
+        + '    <span class="tree-caret ' + (isFolder ? (open ? 'is-open' : '') : 'is-leaf') + '">' + (isFolder ? I_('chevron-right', 12) : '') + '</span>'
+        + '    <span class="tree-icon">' + I_(n.icon || (isFolder ? 'folder' : 'file'), 16, isFolder ? 'text-iris' : '') + '</span>'
+        + '    <span class="flex-1 truncate">' + n.label + '</span>'
+        + (n.badge ? '<span class="pill pill-muted">' + n.badge + '</span>' : '')
+        + (n.size  ? '<span class="text-[10.5px] text-muted font-mono">' + n.size + '</span>' : '')
+        + '  </div>'
+        + (isFolder
+            ? '<ul class="tree-children" style="' + (open ? '' : 'display:none') + '">' + n.children.map((c) => renderNode(c, depth + 1)).join('') + '</ul>'
+            : '')
+        + '</li>';
+    }
+
+    const project = {
+      label: 'admin-panel-vgf26', icon: 'folder', open: true, children: [
+        { label: 'assets', icon: 'folder', open: true, children: [
+          { label: 'css', icon: 'folder', children: [
+            { label: 'app.css', icon: 'file', size: '14 KB' },
+          ]},
+          { label: 'js', icon: 'folder', open: true, children: [
+            { label: 'app.js',          icon: 'file', size: '6 KB' },
+            { label: 'icons.js',        icon: 'file', size: '21 KB' },
+            { label: 'i18n.js',         icon: 'file', size: '7 KB' },
+            { label: 'nav.js',          icon: 'file', size: '8 KB' },
+            { label: 'views.js',        icon: 'file', size: '24 KB' },
+            { label: 'views-extra.js',  icon: 'file', size: '48 KB' },
+            { label: 'components.js',   icon: 'file', size: '18 KB' },
+            { label: 'data.js',         icon: 'file', size: '4 KB' },
+          ]},
+          { label: 'img', icon: 'folder', children: [
+            { label: 'favicon.svg', icon: 'file', size: '0.4 KB' },
+          ]},
+        ]},
+        { label: 'index.html',  icon: 'file', size: '3 KB' },
+        { label: 'README.md',   icon: 'file', size: '6 KB' },
+        { label: 'LICENSE',     icon: 'file', size: '1 KB' },
+        { label: '.gitignore',  icon: 'file', size: '0.2 KB' },
+      ]
+    };
+
+    const dept = {
+      label: 'Studio org', icon: 'building', open: true, children: [
+        { label: 'Design',      icon: 'palette',   children: [{ label: 'Alex Rivera', icon: 'user' }, { label: 'Olivia Chen', icon: 'user' }] },
+        { label: 'Engineering', icon: 'code-2',    children: [{ label: 'Leo Kuznetsov', icon: 'user' }, { label: 'Yuki Tanaka', icon: 'user' }] },
+        { label: 'Marketing',   icon: 'sparkles',  children: [{ label: 'Tomás Silva', icon: 'user' }] },
+        { label: 'Support',     icon: 'message-circle', children: [{ label: 'Aida Mammadli', icon: 'user' }] },
+      ]
+    };
+
+    return pageHead('Tree view',
+        'Expand / collapse hierarchical data — files, folders, organisations.',
+        [{title:'Data'}, {title:'Tree'}])
+      + section('File explorer',
+        '<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">'
+        + '<div class="card card-pad"><div class="flex items-center justify-between mb-2"><h4 class="font-semibold text-sm">Project files</h4><div class="flex gap-1"><button class="btn btn-ghost btn-xs">' + I_('plus', 12) + '</button><button class="btn btn-ghost btn-xs">' + I_('refresh', 12) + '</button></div></div>'
+        + '<ul data-mount="tree" class="font-mono text-[12.5px] space-y-0.5">' + renderNode(project, 0) + '</ul></div>'
+        + '<div class="card card-pad"><h4 class="font-semibold text-sm mb-2">Organisation</h4>'
+        + '<ul data-mount="tree" class="space-y-0.5">' + renderNode(dept, 0) + '</ul></div>'
+        + '</div>',
+        'Click any row to set focus; click a folder to expand or collapse it.')
+      + section('Selectable tree (deep nesting)',
+        '<div class="card card-pad max-w-md"><ul data-mount="tree" class="space-y-0.5">'
+        + renderNode({
+            label: 'Continents', icon: 'globe', open: true, children: [
+              { label: 'Europe', open: true, children: [
+                { label: 'Azerbaijan', icon: 'pin' },
+                { label: 'Germany',    icon: 'pin' },
+                { label: 'Portugal',   icon: 'pin' },
+              ]},
+              { label: 'Asia', children: [{ label: 'Japan', icon: 'pin' }, { label: 'Korea', icon: 'pin' }] },
+              { label: 'North America', children: [{ label: 'Canada', icon: 'pin' }, { label: 'USA', icon: 'pin' }] },
+            ]
+          }, 0)
+        + '</ul></div>');
+  }
+
   function viewKanban() {
     return pageHead('Kanban board', 'Drag cards between columns (visual demo).', [{title:'Data'}, {title:'Kanban'}])
       + '<div class="grid grid-cols-1 md:grid-cols-4 gap-3">'
@@ -672,11 +755,43 @@
   }
 
   function viewHeatmap() {
-    return pageHead('Heatmap · Calendar matrix', 'Density across a 2D grid.', [{title:'Charts'}, {title:'Heatmap'}])
-      + section('Contribution graph',
-        '<div class="card card-pad"><div class="grid gap-[3px]" style="grid-template-columns:repeat(53,minmax(0,1fr))">'
-        + Array.from({length: 7 * 53}, () => { const v = Math.random(); const c = v < 0.2 ? 'rgb(var(--line-soft))' : v < 0.4 ? 'rgb(var(--iris)/.3)' : v < 0.6 ? 'rgb(var(--iris)/.5)' : v < 0.8 ? 'rgb(var(--iris)/.75)' : 'rgb(var(--iris))'; return '<div class="aspect-square rounded-[2px]" style="background:' + c + '"></div>'; }).join('')
-        + '</div></div>');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dow    = ['Mon','','Wed','','Fri','',''];
+    /* Generate the heatmap cells with tooltip data. */
+    const cells = Array.from({length: 7 * 53}, (_, idx) => {
+      const week = Math.floor(idx / 7), day = idx % 7;
+      const v = Math.max(0, Math.round((Math.random() * Math.random()) * 14));
+      const lvl = v === 0 ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 9 ? 3 : 4;
+      const date = new Date(2026, 0, 1 + (week * 7) + day);
+      const label = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      return '<div class="cal-cell gh-l' + lvl + '" data-v="' + v + '" data-l="' + label + '" style="aspect-ratio:1;border-radius:3px"></div>';
+    });
+    return pageHead('Heatmap · Calendar matrix',
+        'Density across the 365-day grid — hover any cell for the daily total.',
+        [{title:'Charts'}, {title:'Heatmap'}])
+      + section('Activity heatmap — 2026',
+        '<div class="card card-pad chart-host" data-chart="cal-heatmap">'
+        + '  <div class="flex justify-between items-center mb-3"><h4 class="font-semibold text-sm">1,284 contributions</h4>'
+        + '    <div class="flex items-center gap-2 text-[11px] text-muted"><span>Less</span>'
+        + ['gh-l0','gh-l1','gh-l2','gh-l3','gh-l4'].map(c => '<div class="' + c + '" style="width:11px;height:11px;border-radius:3px"></div>').join('')
+        + '      <span>More</span></div></div>'
+        + '  <div class="cal-heat">'
+        + '    <div class="dow">' + dow.map(d => '<div>' + d + '</div>').join('') + '</div>'
+        + '    <div class="body">'
+        + '      <div class="months">' + months.map(m => '<div>' + m + '</div>').join('') + '</div>'
+        + '      <div class="gh-grid" style="grid-auto-flow:column;grid-template-columns:repeat(53,minmax(0,1fr));grid-template-rows:repeat(7,minmax(0,1fr))">'
+        +          cells.join('')
+        + '      </div>'
+        + '    </div>'
+        + '  </div>'
+        + '</div>')
+      + section('Hourly distribution',
+        '<div class="card card-pad chart-host" data-chart="hour-heat">'
+        + '  <div class="grid" style="grid-template-columns:80px repeat(24,minmax(0,1fr));gap:3px;font-size:10px;color:rgb(var(--muted))">'
+        + '    <div></div>' + Array.from({length:24}, (_,h) => '<div class="text-center">' + (h%4===0?h:'') + '</div>').join('')
+        +      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => '<div class="flex items-center">' + d + '</div>' + Array.from({length:24}, (_,h) => { const v = Math.round(Math.random() * 12); const lvl = v === 0 ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 8 ? 3 : 4; return '<div class="cal-cell gh-l' + lvl + '" data-v="' + v + '" data-l="' + d + ' · ' + String(h).padStart(2,'0') + ':00" style="aspect-ratio:1;border-radius:3px"></div>'; }).join('')).join('')
+        + '  </div>'
+        + '</div>');
   }
 
   /* ────────────────────────────────────────────────────────────────
@@ -872,18 +987,71 @@
 
   function viewAirbnb() {
     const grads = ['#7c3aed,#d846ef','#06b6d4,#7c3aed','#f59e0b,#d846ef','#10b981,#06b6d4','#f43f5e,#fb923c','#22d3ee,#6366f1','#84cc16,#06b6d4','#d946ef,#f43f5e'];
-    return pageHead('Airbnb-style card grid', 'Image-first listing cards.', [{title:'Inspired'}, {title:'Airbnb'}])
-      + '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">'
-      + Array.from({length: 8}, (_, i) => '<div class="hover-lift cursor-pointer"><div class="aspect-square rounded-2xl mb-2 relative overflow-hidden" style="background:linear-gradient(135deg,' + grads[i] + ')"><button class="absolute top-3 right-3 text-white">' + I_('heart', 20) + '</button></div><div class="flex justify-between"><div class="font-semibold text-sm">Luxury loft in ' + ['Baku','Berlin','Tokyo','Lisbon','NYC','Paris','Seoul','Sydney'][i] + '</div><div class="text-xs flex items-center gap-1">★ ' + (4.5 + Math.random() * 0.5).toFixed(2) + '</div></div><div class="text-xs text-muted mt-1">' + (i + 3) + 'h drive · ' + (200 + i * 80) + ' km</div><div class="text-xs text-muted">Nov 12-18</div><div class="text-sm font-semibold mt-1">$' + (89 + i * 24) + ' <span class="font-normal">night</span></div></div>').join('')
+    const cities = ['Baku, AZ','Berlin, DE','Tokyo, JP','Lisbon, PT','New York, US','Paris, FR','Seoul, KR','Sydney, AU'];
+    const titles = ['Iridescent loft','Aurora suite','Spectrum apartment','Prism penthouse','Glass villa','Crystal cabin','Neon studio','Holo retreat'];
+    return pageHead('Airbnb-style card grid',
+        'Image-first listing cards with heart toggle, rating, distance and price.',
+        [{title:'Inspired'}, {title:'Airbnb'}],
+        '<button class="btn btn-secondary btn-xs">' + I('sliders') + '<span>Filters</span></button>')
+      + '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">'
+      + Array.from({length: 8}, (_, i) =>
+          '<article class="lst-card">'
+          + '  <div class="lst-cover" style="background:linear-gradient(135deg,' + grads[i] + ')">'
+          + '    <button class="lst-heart" data-act="heart" aria-label="Save">' + I_('heart', 18) + '</button>'
+          + '    <span class="absolute top-3 left-3 pill" style="background:rgba(255,255,255,.92);color:#0b0a14;border:0">Guest favourite</span>'
+          + '    <div class="lst-dots">' + [0,1,2,3,4].map(j => '<span class="' + (j === 0 ? 'is-on' : '') + '"></span>').join('') + '</div>'
+          + '  </div>'
+          + '  <div class="mt-3 px-1">'
+          + '    <div class="flex justify-between items-start gap-2">'
+          + '      <div class="font-semibold text-[14px] truncate">' + titles[i] + ' in ' + cities[i] + '</div>'
+          + '      <div class="text-[12px] flex items-center gap-1 shrink-0">★ <span class="font-semibold">' + (4.7 + Math.random() * 0.25).toFixed(2) + '</span></div>'
+          + '    </div>'
+          + '    <div class="text-[12.5px] text-muted mt-0.5">' + (i + 3) + ' hour drive · Hosted by ' + D().USERS[i].name.split(' ')[0] + '</div>'
+          + '    <div class="text-[12.5px] text-muted">12 – 18 Nov · ' + (i + 1) + ' guests</div>'
+          + '    <div class="mt-2 text-[14px]"><span class="font-bold">$' + (89 + i * 24) + '</span><span class="text-muted"> night · </span><span class="text-muted underline">$' + ((89 + i * 24) * 6) + ' total</span></div>'
+          + '  </div>'
+          + '</article>'
+        ).join('')
       + '</div>';
   }
 
   function viewGithub() {
-    return pageHead('GitHub contribution graph', '53-week activity heatmap.', [{title:'Inspired'}, {title:'GitHub'}])
-      + section('Contribution activity',
-        '<div class="card card-pad"><div class="flex items-center justify-between mb-3"><h4 class="font-semibold">1,284 contributions in the last year</h4><div class="text-xs text-muted">Last update: 2 min ago</div></div>'
-        + '<div class="grid gap-[3px]" style="grid-template-columns:repeat(53,minmax(0,1fr))">' + Array.from({length: 7 * 53}, () => { const v = Math.random(); const c = v < 0.2 ? '#ebedf0' : v < 0.4 ? '#9be9a8' : v < 0.6 ? '#40c463' : v < 0.8 ? '#30a14e' : '#216e39'; return '<div class="aspect-square rounded-[2px]" style="background:' + c + '"></div>'; }).join('') + '</div>'
-        + '<div class="flex justify-end items-center gap-2 mt-3 text-xs text-muted"><span>Less</span>' + ['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'].map(c => '<div class="w-3 h-3 rounded-[2px]" style="background:' + c + '"></div>').join('') + '<span>More</span></div></div>');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    /* Generate cells column-by-column (52 weeks × 7 days). */
+    const cells = [];
+    for (let w = 0; w < 53; w++) {
+      for (let d = 0; d < 7; d++) {
+        const v = Math.max(0, Math.round((Math.random() * Math.random()) * 14));
+        const lvl = v === 0 ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 9 ? 3 : 4;
+        const date = new Date(2025, 4, 25);
+        date.setDate(date.getDate() + (w * 7) + d);
+        const label = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        cells.push('<div class="gh-cell gh-l' + lvl + '" data-v="' + v + '" data-l="' + label + '"></div>');
+      }
+    }
+    return pageHead('GitHub-style contribution graph',
+        '53-week activity heatmap — theme-aware, hover for the daily count.',
+        [{title:'Inspired'}, {title:'GitHub'}])
+      + section('@vugarfamiloglu · 1,284 contributions in the last year',
+        '<div class="card card-pad chart-host" data-chart="gh-graph">'
+        + '  <div class="cal-heat">'
+        + '    <div class="dow"><div></div><div>Mon</div><div></div><div>Wed</div><div></div><div>Fri</div><div></div></div>'
+        + '    <div class="body">'
+        + '      <div class="months">' + months.map(m => '<div>' + m + '</div>').join('') + '</div>'
+        + '      <div class="gh-grid" style="grid-auto-flow:column;grid-template-rows:repeat(7,minmax(0,1fr))">' + cells.join('') + '</div>'
+        + '    </div>'
+        + '  </div>'
+        + '  <div class="flex justify-between items-center mt-4 text-xs text-muted">'
+        + '    <span>Learn how we count contributions</span>'
+        + '    <div class="flex items-center gap-2"><span>Less</span>' + ['gh-l0','gh-l1','gh-l2','gh-l3','gh-l4'].map(c => '<div class="' + c + '" style="width:11px;height:11px;border-radius:2px"></div>').join('') + '<span>More</span></div>'
+        + '  </div>'
+        + '</div>')
+      + section('Contribution stats',
+        '<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">'
+        + statTile('Total commits',    '1,284',  '+182 this month', 'up', 'git',    'iris')
+        + statTile('Longest streak',   '42 days','current 14',      'up', 'flame',  'fuchsia')
+        + statTile('Pull requests',    '208',    '+34',             'up', 'arrow-up-right', 'cyan')
+        + '</div>');
   }
 
   /* ────────────────────────────────────────────────────────────────
@@ -898,15 +1066,18 @@
   }
 
   function viewWhiteboard() {
-    return pageHead('Whiteboard · Mind map · Flow', 'Infinite canvas with shapes.', [{title:'Specialty'}, {title:'Whiteboard'}])
-      + section('Mind map demo',
-        '<div class="card relative overflow-hidden h-96 bg-soft">'
-        + '<svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 400">'
-        + '<defs><linearGradient id="conn"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#d846ef"/></linearGradient></defs>'
-        + ['M400,200 L200,100','M400,200 L600,100','M400,200 L200,300','M400,200 L600,300'].map(d => '<path d="' + d + '" stroke="url(#conn)" stroke-width="2" fill="none"/>').join('')
-        + '</svg>'
-        + '<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-3 rounded-xl text-white font-bold" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)))">VGF26</div>'
-        + ['top-[20%] left-[20%]','top-[20%] right-[20%]','bottom-[20%] left-[20%]','bottom-[20%] right-[20%]'].map((p, i) => '<div class="absolute ' + p + ' card card-pad text-sm font-semibold">' + ['Design system', 'Components', 'Icons', 'Themes'][i] + '</div>').join('')
+    return pageHead('Whiteboard · Mind map (XMind style)',
+        'Click any node to collapse / expand its subtree. Curved SVG connectors redraw automatically.',
+        [{title:'Specialty'}, {title:'Mind map'}],
+        '<button class="btn btn-secondary btn-xs">' + I('plus') + '<span>Add node</span></button>'
+        + '<button class="btn btn-primary btn-xs">' + I('download') + '<span>Export</span></button>')
+      + section('Studio brainstorm',
+        '<div class="card overflow-hidden">'
+        + '  <div class="card-head !p-3 flex justify-between items-center">'
+        + '    <div class="flex gap-2 items-center"><span class="pill pill-iris">' + I_('sparkles-2', 12) + 'XMind-style</span><span class="text-xs text-muted">Click a node to collapse</span></div>'
+        + '    <div class="flex gap-1"><button class="tb-icon-btn">' + I_('minimize', 14) + '</button><button class="tb-icon-btn">' + I_('expand', 14) + '</button><button class="tb-icon-btn">' + I_('refresh', 14) + '</button></div>'
+        + '  </div>'
+        + '  <div class="mindmap-host" data-mount="mindmap" style="min-height:540px"></div>'
         + '</div>');
   }
 
@@ -920,13 +1091,35 @@
   }
 
   function viewFlow() {
-    return pageHead('Org chart · Node graph', 'Hierarchical chart of teams.', [{title:'Specialty'}, {title:'Flow'}])
-      + section('Org chart',
-        '<div class="card card-pad py-8">'
-        + '<div class="text-center"><div class="inline-block card card-pad text-iris" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff;border:0">CEO</div></div>'
-        + '<div class="text-center my-4 text-muted">│</div>'
-        + '<div class="grid grid-cols-3 gap-4 max-w-2xl mx-auto">' + ['Design','Engineering','Marketing'].map(t => '<div class="text-center"><div class="card card-pad">' + t + '</div><div class="my-2 text-muted">│</div><div class="space-y-1">' + ['Lead', 'IC1', 'IC2'].map(r => '<div class="card card-pad text-xs">' + r + '</div>').join('') + '</div></div>').join('') + '</div>'
-        + '</div>');
+    function node(name, role, root) {
+      return '<div class="orgchart-node' + (root ? ' is-root' : '') + '"><h5>' + name + '</h5><div class="role">' + role + '</div></div>';
+    }
+    return pageHead('Org chart · Node graph',
+        'Hierarchical chart of teams with SVG-style connectors.',
+        [{title:'Specialty'}, {title:'Org chart'}])
+      + section('Studio org',
+        '<div class="card card-pad overflow-x-auto"><div class="orgchart" style="min-width:780px">'
+        + '  <div class="orgchart-row">' + node('Vugar Familoglu', 'CEO / Founder', true) + '</div>'
+        + '  <div class="orgchart-row is-multi">'
+        +      node('Sarah Jenkins', 'Head of Product')
+        +      node('Leo Kuznetsov', 'Head of Engineering')
+        +      node('Tomás Silva',  'Head of Marketing')
+        + '  </div>'
+        + '  <div class="orgchart-row is-multi" style="gap:18px">'
+        +      node('Alex Rivera', 'Designer')
+        +      node('Maya Patel',  'DevOps')
+        +      node('Yuki Tanaka', 'Engineer')
+        +      node('Olivia Chen', 'Data')
+        +      node('Aida Mammadli','Support')
+        + '  </div>'
+        + '</div></div>')
+      + section('Node graph (flow)',
+        '<div class="card card-pad overflow-hidden h-80 relative bg-soft">'
+        + '<svg viewBox="0 0 800 320" class="w-full h-full">'
+        + '<defs><linearGradient id="flow-c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed" stop-opacity=".8"/><stop offset="1" stop-color="#d846ef" stop-opacity=".8"/></linearGradient></defs>'
+        + [['M170,160 C260,160 280,80 380,80','M170,160 C260,160 280,160 380,160','M170,160 C260,160 280,240 380,240','M510,80 C600,80 600,160 660,160','M510,160 C600,160 600,160 660,160','M510,240 C600,240 600,160 660,160'].map(d => '<path d="' + d + '" stroke="url(#flow-c)" stroke-width="2" fill="none"/>').join('')]
+        + [['Input',90,160,'#7c3aed'],['Filter',420,80,'#d846ef'],['Transform',420,160,'#22d3ee'],['Validate',420,240,'#10b981'],['Output',700,160,'#7c3aed']].map(([t,x,y,c]) => '<g><rect x="' + (x-50) + '" y="' + (y-22) + '" width="100" height="44" rx="12" fill="rgb(var(--bg-card))" stroke="' + c + '" stroke-width="2"/><text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="13" font-weight="600" fill="rgb(var(--ink))">' + t + '</text></g>').join('')
+        + '</svg></div>');
   }
 
   function viewReels() {
@@ -1044,6 +1237,7 @@
     '#/kanban':            viewKanban,
     '#/timeline':          viewTimeline,
     '#/pagination':        viewPagination,
+    '#/tree':              viewTree,
 
     /* media */
     '#/gallery':           viewGallery,

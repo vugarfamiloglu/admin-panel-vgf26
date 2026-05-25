@@ -468,3 +468,214 @@ html[data-theme="dark"] .glass-card { border-color: rgb(255 255 255 / .08); }
 
 /* ── Misc focus visible ────────────────────────────────────────── */
 :focus-visible { outline: 2px solid rgb(var(--iris)); outline-offset: 2px; border-radius: 8px; }
+
+/* ── Dropdown menus (anchored to topbar buttons) ───────────────── */
+.dropdown-panel {
+  position: fixed; z-index: 350;
+  min-width: 240px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--line));
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform-origin: top right;
+  animation: dd-in .14s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes dd-in { from { opacity: 0; transform: scale(.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.dropdown-head {
+  padding: 12px 14px; border-bottom: 1px solid rgb(var(--line));
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, rgb(var(--iris)/.06), rgb(var(--fuchsia)/.06));
+}
+.dropdown-head h4 { font-family: 'DM Sans', Inter, sans-serif; font-weight: 700; font-size: 13.5px; }
+.dropdown-body { max-height: 380px; overflow-y: auto; }
+.dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; font-size: 13px; cursor: pointer;
+  color: rgb(var(--ink)); text-decoration: none;
+  transition: background .12s;
+}
+.dropdown-item:hover { background: rgb(var(--iris-soft)); color: rgb(var(--iris)); }
+.dropdown-divider { height: 1px; background: rgb(var(--line-soft)); margin: 4px 0; }
+.dropdown-foot { padding: 8px 12px; border-top: 1px solid rgb(var(--line)); background: rgb(var(--bg-soft)); display: flex; justify-content: space-between; }
+
+/* Chart tooltip — single instance positioned absolutely inside the host. */
+.chart-host { position: relative; }
+.chart-tip {
+  position: absolute; pointer-events: none;
+  background: rgb(var(--ink)); color: #fff;
+  font-size: 11px; padding: 6px 9px; border-radius: 8px;
+  opacity: 0; transform: translate(-50%, -100%) translateY(-8px);
+  transition: opacity .12s; white-space: nowrap;
+  box-shadow: 0 6px 14px -4px rgba(0,0,0,.35); z-index: 5;
+}
+.chart-tip.is-on { opacity: 1; }
+.chart-tip::after {
+  content: ''; position: absolute; left: 50%; bottom: -4px;
+  width: 8px; height: 8px; background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.chart-tip strong { color: #fff; font-weight: 700; display: block; font-size: 13px; }
+.chart-tip span   { opacity: .75; font-size: 10.5px; }
+.chart-point { transition: r .15s; cursor: pointer; }
+.chart-point:hover, .chart-point.is-hover { r: 6; }
+.chart-bar   { transition: opacity .15s; cursor: pointer; }
+.chart-bar:hover, .chart-bar.is-hover { opacity: .85; }
+.chart-slice { transition: transform .15s ease; transform-origin: center; cursor: pointer; }
+.chart-slice:hover { transform: scale(1.04); }
+
+/* Tree view component (file explorer style) */
+.tree-node { user-select: none; }
+.tree-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; transition: background .12s;
+}
+.tree-row:hover { background: rgb(var(--bg-soft)); }
+.tree-row.is-active {
+  background: rgb(var(--iris-soft)); color: rgb(var(--iris)); font-weight: 600;
+}
+.tree-caret { display: inline-grid; place-items: center; width: 14px; height: 14px; color: rgb(var(--muted)); transition: transform .15s; flex-shrink: 0; }
+.tree-caret.is-open { transform: rotate(90deg); }
+.tree-caret.is-leaf { visibility: hidden; }
+.tree-icon { color: rgb(var(--muted)); flex-shrink: 0; }
+.tree-children { padding-left: 16px; border-left: 1px dashed rgb(var(--line)); margin-left: 11px; overflow: hidden; }
+
+/* ── XMind-style mind map ─────────────────────────────────────── */
+.mindmap-host {
+  position: relative; overflow: auto;
+  background: linear-gradient(135deg, rgb(var(--bg-soft)), rgb(var(--bg-card)));
+  border-radius: 16px;
+  min-height: 520px;
+}
+.mindmap-host > svg { position: absolute; inset: 0; pointer-events: none; }
+.mindmap-host .mm-canvas { position: relative; padding: 40px 40px; }
+.mm-node {
+  position: absolute;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; user-select: none;
+  background: rgb(var(--bg-card));
+  border: 1.5px solid rgb(var(--line));
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap; max-width: 220px; text-overflow: ellipsis; overflow: hidden;
+  transition: transform .15s ease, border-color .15s, box-shadow .15s;
+  z-index: 2;
+}
+.mm-node:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgb(var(--iris)); }
+.mm-node.mm-root {
+  background: linear-gradient(135deg, rgb(var(--iris)), rgb(var(--fuchsia)));
+  color: #fff; border-color: transparent;
+  font-size: 16px; padding: 14px 22px;
+  box-shadow: var(--shadow-glow);
+}
+.mm-node.mm-l1 { font-weight: 700; }
+.mm-node[data-color="iris"]    { border-left: 4px solid rgb(var(--iris)); }
+.mm-node[data-color="fuchsia"] { border-left: 4px solid rgb(var(--fuchsia)); }
+.mm-node[data-color="cyan"]    { border-left: 4px solid rgb(var(--cyan)); }
+.mm-node[data-color="emerald"] { border-left: 4px solid rgb(var(--emerald)); }
+.mm-node[data-color="amber"]   { border-left: 4px solid rgb(var(--amber)); }
+.mm-node[data-color="rose"]    { border-left: 4px solid rgb(var(--rose)); }
+.mm-node .mm-toggle {
+  display: inline-grid; place-items: center;
+  width: 16px; height: 16px; margin-left: 6px;
+  border-radius: 999px; background: rgb(var(--iris-soft)); color: rgb(var(--iris));
+  font-size: 10px; font-weight: 700; transition: transform .15s;
+}
+.mm-node.mm-collapsed .mm-toggle { transform: rotate(-90deg); }
+.mm-node.mm-root .mm-toggle { background: rgba(255,255,255,.25); color: #fff; }
+
+/* ── Org chart with SVG connectors ─────────────────────────────── */
+.orgchart {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px; gap: 28px;
+}
+.orgchart-row {
+  display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; position: relative;
+}
+.orgchart-node {
+  padding: 12px 18px; border-radius: 12px; min-width: 140px;
+  background: rgb(var(--bg-card)); border: 1px solid rgb(var(--line));
+  text-align: center; box-shadow: var(--shadow-sm);
+  position: relative; z-index: 2;
+}
+.orgchart-node.is-root {
+  background: linear-gradient(135deg, rgb(var(--iris)), rgb(var(--fuchsia)));
+  color: #fff; border-color: transparent;
+  box-shadow: var(--shadow-glow);
+}
+.orgchart-node h5 { font-family: 'DM Sans', Inter, sans-serif; font-weight: 700; font-size: 13.5px; }
+.orgchart-node .role { font-size: 10.5px; color: rgb(var(--muted)); margin-top: 2px; }
+.orgchart-node.is-root .role { color: rgba(255,255,255,.75); }
+.orgchart-row::before {
+  content: ''; position: absolute; top: -16px; left: 50%; width: 1.5px; height: 16px;
+  background: rgb(var(--line));
+}
+.orgchart-row.is-multi::after {
+  content: ''; position: absolute; top: -16px;
+  left: 25%; right: 25%; height: 1.5px;
+  background: rgb(var(--line));
+}
+
+/* ── Airbnb listing card ──────────────────────────────────────── */
+.lst-card { cursor: pointer; transition: transform .2s ease; }
+.lst-card:hover { transform: translateY(-3px); }
+.lst-card .lst-cover {
+  aspect-ratio: 1 / 1; border-radius: 16px; position: relative;
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.lst-card .lst-cover::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.25));
+}
+.lst-card .lst-heart {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  background: rgba(0,0,0,.25); color: #fff;
+  border: 0; padding: 6px; border-radius: 999px;
+  backdrop-filter: blur(8px); cursor: pointer;
+  transition: transform .15s, background .15s;
+}
+.lst-card .lst-heart:hover { transform: scale(1.1); background: rgba(255,255,255,.35); }
+.lst-card .lst-heart.is-fav { color: rgb(var(--rose)); background: #fff; }
+.lst-card .lst-dots {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 5px; z-index: 2;
+}
+.lst-card .lst-dots span { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.5); }
+.lst-card .lst-dots span.is-on { background: #fff; }
+
+/* ── GitHub contribution heatmap (theme-aware) ─────────────────── */
+.gh-grid {
+  display: grid; grid-template-columns: repeat(53, minmax(0,1fr));
+  gap: 3px;
+}
+.gh-cell {
+  aspect-ratio: 1; border-radius: 2px; cursor: pointer;
+  transition: outline .12s;
+}
+.gh-cell:hover { outline: 2px solid rgb(var(--iris)); outline-offset: 1px; }
+.gh-l0 { background: rgb(var(--line-soft)); }
+.gh-l1 { background: rgb(var(--iris) / .28); }
+.gh-l2 { background: rgb(var(--iris) / .50); }
+.gh-l3 { background: rgb(var(--iris) / .72); }
+.gh-l4 { background: rgb(var(--iris)); }
+html[data-theme="dark"] .gh-l0 { background: rgb(255 255 255 / .06); }
+
+/* ── Calendar heatmap (year matrix with month labels) ─────────── */
+.cal-heat {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+}
+.cal-heat .dow {
+  display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px;
+  font-size: 9px; color: rgb(var(--muted)); align-items: center;
+}
+.cal-heat .body { position: relative; }
+.cal-heat .months {
+  display: grid; grid-template-columns: repeat(12, 1fr);
+  font-size: 10px; color: rgb(var(--muted)); margin-bottom: 4px;
+}
+

@@ -126,7 +126,7 @@
       + '  <button class="tb-icon-btn" data-act="fullscreen" title="' + I18n.t('topbar.fullscreen') + '">' + I('expand') + '</button>'
       + '  <button class="tb-icon-btn" data-act="open-messages" title="' + I18n.t('topbar.messages') + '">' + I('message-circle') + '<span class="badge">3</span></button>'
       + '  <button class="tb-icon-btn" data-act="open-notif" title="' + I18n.t('topbar.notifications') + '">' + I('bell') + '<span class="badge">' + DEMO.NOTIFICATIONS.filter(n => !n.read).length + '</span></button>'
-      + '  <div class="hidden sm:block ml-2"><div class="avatar" style="width:34px;height:34px;font-size:13px">VF</div></div>'
+      + '  <button class="tb-icon-btn hidden sm:grid ml-2" data-act="open-user" title="' + I18n.t('topbar.profile') + '" style="padding:0;width:34px;height:34px;border-radius:999px;overflow:hidden;border:0"><span class="avatar" style="width:34px;height:34px;font-size:13px;border:0">VF</span></button>'
       + '</div>';
 
     /* Wire actions */
@@ -144,32 +144,94 @@
       if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
       else document.exitFullscreen?.();
     });
-    tb.querySelector('[data-act="open-notif"]')?.addEventListener('click', openNotifications);
-    tb.querySelector('[data-act="open-messages"]')?.addEventListener('click', openMessages);
+    tb.querySelector('[data-act="open-notif"]')?.addEventListener('click', (e) => openNotifications(e.currentTarget));
+    tb.querySelector('[data-act="open-messages"]')?.addEventListener('click', (e) => openMessages(e.currentTarget));
+    tb.querySelector('[data-act="open-user"]')?.addEventListener('click', (e) => openUserMenu(e.currentTarget));
     tb.querySelectorAll('[data-act="lang"]').forEach((b) => b.addEventListener('click', () => I18n.setLang(b.dataset.lang)));
   }
 
-  function openNotifications() {
-    Components.modal({
-      title: I18n.t('topbar.notifications'),
-      body: '<ul class="divide-y divide-[rgb(var(--line-soft))]">'
-        + DEMO.NOTIFICATIONS.map(n =>
-            '<li class="flex gap-3 py-3 ' + (n.read ? 'opacity-70' : '') + '">'
-            + '<span class="grid place-items-center w-9 h-9 rounded-full shrink-0" style="background:rgb(var(--' + (n.kind === 'warn' ? 'amber' : n.kind === 'success' ? 'emerald' : 'iris') + ')/.14);color:rgb(var(--' + (n.kind === 'warn' ? 'amber' : n.kind === 'success' ? 'emerald' : 'iris') + '))">' + I(n.icon, { size: 16 }) + '</span>'
-            + '<div class="flex-1"><div class="text-sm">' + n.text + '</div><div class="text-[11px] text-muted mt-1">' + n.time + ' ago</div></div>'
-            + (n.read ? '' : '<span class="w-2 h-2 rounded-full" style="background:rgb(var(--iris))"></span>')
-            + '</li>').join('') + '</ul>',
-      footer: '<button class="btn btn-secondary" data-close>Close</button><button class="btn btn-primary" data-close>Mark all read</button>',
-    });
+  function openNotifications(anchor) {
+    const items = DEMO.NOTIFICATIONS;
+    const unread = items.filter(n => !n.read).length;
+    const body =
+      '<div class="dropdown-head">'
+      + '  <h4>' + I18n.t('topbar.notifications') + '</h4>'
+      + '  <span class="pill pill-iris">' + unread + ' new</span>'
+      + '</div>'
+      + '<div class="dropdown-body">'
+      + items.map(n => {
+          const c = n.kind === 'warn' ? 'amber' : n.kind === 'success' ? 'emerald' : 'iris';
+          return '<a class="dropdown-item ' + (n.read ? 'opacity-70' : '') + '" href="#">'
+            + '  <span class="grid place-items-center w-9 h-9 rounded-full shrink-0" style="background:rgb(var(--' + c + ')/.14);color:rgb(var(--' + c + '))">' + I(n.icon, { size: 16 }) + '</span>'
+            + '  <span class="flex-1"><span class="block">' + n.text + '</span><span class="block text-[11px] text-muted mt-0.5">' + n.time + ' ago</span></span>'
+            + (n.read ? '' : '<span class="w-2 h-2 rounded-full shrink-0" style="background:rgb(var(--iris))"></span>')
+            + '</a>';
+        }).join('')
+      + '</div>'
+      + '<div class="dropdown-foot">'
+      + '  <a class="text-iris text-xs font-semibold" href="#" data-act-2="all">Mark all read</a>'
+      + '  <a class="text-iris text-xs font-semibold" href="#">See all →</a>'
+      + '</div>';
+    Components.dropdown({ anchor, width: 360, maxWidth: 380, body });
   }
-  function openMessages() {
-    Components.modal({
-      title: I18n.t('topbar.messages'),
-      body: '<ul class="divide-y divide-[rgb(var(--line-soft))]">'
-        + DEMO.CHAT.map(m =>
-            '<li class="flex gap-3 py-3"><span class="avatar" style="width:36px;height:36px;font-size:12px">' + m.who.split(' ').map(x=>x[0]).join('') + '</span>'
-            + '<div class="flex-1"><div class="flex justify-between"><strong class="text-sm">' + m.who + '</strong><span class="text-[10px] text-muted">' + m.time + '</span></div>'
-            + '<div class="text-xs text-muted mt-1">' + m.text + '</div></div></li>').join('') + '</ul>',
+
+  function openMessages(anchor) {
+    const body =
+      '<div class="dropdown-head"><h4>' + I18n.t('topbar.messages') + '</h4><span class="pill pill-iris">3 unread</span></div>'
+      + '<div class="dropdown-body">'
+      + DEMO.CHAT.map(m =>
+          '<a class="dropdown-item" href="#/specialty/chat">'
+          + '  <span class="avatar shrink-0" style="width:36px;height:36px;font-size:12px">' + m.who.split(' ').map(x=>x[0]).join('') + '</span>'
+          + '  <span class="flex-1 min-w-0"><span class="flex justify-between"><strong class="text-sm">' + m.who + '</strong><span class="text-[10px] text-muted">' + m.time + '</span></span>'
+          + '  <span class="block text-xs text-muted mt-0.5 truncate">' + m.text + '</span></span>'
+          + '</a>').join('')
+      + '</div>'
+      + '<div class="dropdown-foot"><a class="text-iris text-xs font-semibold" href="#/specialty/chat">Open inbox →</a></div>';
+    Components.dropdown({ anchor, width: 340, maxWidth: 380, body });
+  }
+
+  function openUserMenu(anchor) {
+    const theme = currentTheme();
+    const lang = I18n.getLang().toUpperCase();
+    const body =
+      '<div class="dropdown-head" style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgb(var(--iris)/.12),rgb(var(--fuchsia)/.12))">'
+      + '  <span class="avatar" style="width:42px;height:42px;font-size:14px">VF</span>'
+      + '  <div style="line-height:1.3"><div class="font-semibold text-sm">Vugar Familoglu</div><div class="text-[11px] text-muted">vugar@vgf26.io</div></div>'
+      + '</div>'
+      + '<div class="dropdown-body">'
+      + '  <a class="dropdown-item" href="#/system/settings">' + I('user', { size: 16, class: 'text-muted' }) + '<span>' + I18n.t('topbar.profile') + '</span></a>'
+      + '  <a class="dropdown-item" href="#/system/settings">' + I('settings', { size: 16, class: 'text-muted' }) + '<span>Settings</span></a>'
+      + '  <a class="dropdown-item" href="#/system/security">' + I('shield', { size: 16, class: 'text-muted' }) + '<span>Security</span></a>'
+      + '  <a class="dropdown-item" href="#/commerce/billing">' + I('credit-card', { size: 16, class: 'text-muted' }) + '<span>Billing</span></a>'
+      + '  <div class="dropdown-divider"></div>'
+      + '  <a class="dropdown-item" data-act-2="theme">' + I(theme === 'dark' ? 'sun' : 'moon', { size: 16, class: 'text-muted' }) + '<span>' + (theme === 'dark' ? 'Light' : 'Dark') + ' mode</span><span class="ml-auto kbd">⌘D</span></a>'
+      + '  <a class="dropdown-item" data-act-2="lang-toggle">' + I('languages', { size: 16, class: 'text-muted' }) + '<span>Language</span><span class="ml-auto pill pill-iris">' + lang + '</span></a>'
+      + '  <a class="dropdown-item" href="#/system/i18n">' + I('help-circle', { size: 16, class: 'text-muted' }) + '<span>Help & docs</span></a>'
+      + '  <div class="dropdown-divider"></div>'
+      + '  <a class="dropdown-item text-rose" data-act-2="logout">' + I('log-out', { size: 16 }) + '<span>' + I18n.t('common.signout') + '</span></a>'
+      + '</div>';
+    Components.dropdown({
+      anchor, width: 260, body,
+      onMount: (panel, close) => {
+        panel.querySelector('[data-act-2="theme"]')?.addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); close(); });
+        panel.querySelector('[data-act-2="lang-toggle"]')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          const order = ['en', 'az', 'ru'];
+          const cur = I18n.getLang();
+          I18n.setLang(order[(order.indexOf(cur) + 1) % order.length]);
+          close();
+        });
+        panel.querySelector('[data-act-2="logout"]')?.addEventListener('click', (e) => {
+          e.preventDefault(); close();
+          Components.confirmModal({
+            title: I18n.t('common.signout') + '?',
+            message: 'You will be signed out of this session.',
+            confirmLabel: I18n.t('common.signout'),
+            destructive: true,
+            onConfirm: () => Components.toast('info', 'Signed out', 'Demo only — nothing actually changed.'),
+          });
+        });
+      },
     });
   }
 
