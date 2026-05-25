@@ -762,6 +762,166 @@
         btn.innerHTML = Icons.get('heart', { size: 18 });
       });
     });
+
+    /* Lightbox triggers — collect siblings within data-lightbox-group. */
+    root.querySelectorAll('[data-lightbox-group]').forEach((group) => {
+      const tiles = [...group.querySelectorAll('[data-lightbox]')];
+      const items = tiles.map((t) => ({
+        src:   t.dataset.lightbox,
+        title: t.dataset.title || '',
+        tag:   t.dataset.tag   || '',
+      }));
+      tiles.forEach((t, i) => t.addEventListener('click', () => openLightbox(items, i)));
+    });
+
+    /* Carousels */
+    root.querySelectorAll('[data-mount="carousel"]').forEach(bindCarousel);
+
+    /* Tabs */
+    root.querySelectorAll('[data-tab-set]').forEach(bindTabs);
+
+    /* Mega menus */
+    root.querySelectorAll('[data-mount="mega"]').forEach(bindMega);
+
+    /* Image compare slider */
+    root.querySelectorAll('[data-mount="compare"]').forEach(bindCompare);
+  }
+
+  /* ── Lightbox ───────────────────────────────────────────────── */
+  function openLightbox(items, startIdx) {
+    let idx = startIdx || 0;
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox';
+    overlay.innerHTML =
+      '<img class="lightbox-img" src="' + items[idx].src + '" alt="">'
+      + '<div class="lightbox-meta">'
+      + '  <span class="font-semibold">' + items[idx].title + '</span>'
+      + '  <span class="pill">' + items[idx].tag + '</span>'
+      + '  <span class="text-white/60 font-mono text-[11px]">' + (idx + 1) + ' / ' + items.length + '</span>'
+      + '</div>'
+      + '<button class="lightbox-btn lb-prev" aria-label="Previous">' + Icons.get('chevron-left', { size: 22 }) + '</button>'
+      + '<button class="lightbox-btn lb-next" aria-label="Next">'     + Icons.get('chevron-right', { size: 22 }) + '</button>'
+      + '<button class="lightbox-btn lb-close" aria-label="Close">'   + Icons.get('x', { size: 18 }) + '</button>';
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    function render() {
+      overlay.querySelector('.lightbox-img').src = items[idx].src;
+      const meta = overlay.querySelector('.lightbox-meta');
+      meta.innerHTML = '<span class="font-semibold">' + items[idx].title + '</span>'
+        + '<span class="pill">' + items[idx].tag + '</span>'
+        + '<span class="text-white/60 font-mono text-[11px]">' + (idx + 1) + ' / ' + items.length + '</span>';
+    }
+    function close() {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 180);
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+    }
+    function prev() { idx = (idx - 1 + items.length) % items.length; render(); }
+    function next() { idx = (idx + 1) % items.length; render(); }
+    function onKey(e) {
+      if (e.key === 'Escape')     close();
+      if (e.key === 'ArrowLeft')  prev();
+      if (e.key === 'ArrowRight') next();
+    }
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('.lb-close').addEventListener('click', close);
+    overlay.querySelector('.lb-prev').addEventListener('click', prev);
+    overlay.querySelector('.lb-next').addEventListener('click', next);
+    document.addEventListener('keydown', onKey);
+  }
+
+  /* ── Carousel ───────────────────────────────────────────────── */
+  function bindCarousel(host) {
+    const track = host.querySelector('.carousel-track');
+    const slides = [...track.children];
+    const dotsHost = host.querySelector('.carousel-dots');
+    let idx = 0;
+    let auto;
+
+    if (dotsHost) {
+      dotsHost.innerHTML = slides.map((_, i) => '<button data-i="' + i + '"' + (i === 0 ? ' class="is-on"' : '') + '></button>').join('');
+      dotsHost.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => go(+b.dataset.i, true)));
+    }
+    function go(n, manual) {
+      idx = (n + slides.length) % slides.length;
+      track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+      if (dotsHost) dotsHost.querySelectorAll('button').forEach((b, i) => b.classList.toggle('is-on', i === idx));
+      if (manual) reset();
+    }
+    function reset() { clearInterval(auto); auto = setInterval(() => go(idx + 1), 5000); }
+    host.querySelector('.carousel-nav.prev')?.addEventListener('click', () => go(idx - 1, true));
+    host.querySelector('.carousel-nav.next')?.addEventListener('click', () => go(idx + 1, true));
+    host.addEventListener('mouseenter', () => clearInterval(auto));
+    host.addEventListener('mouseleave', reset);
+    reset();
+  }
+
+  /* ── Tabs ───────────────────────────────────────────────────── */
+  function bindTabs(host) {
+    const buttons = host.querySelectorAll('[data-tab]');
+    const panels  = host.querySelectorAll('[data-tab-panel]');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.tab;
+      buttons.forEach((bb) => bb.classList.toggle('is-active', bb === b));
+      panels.forEach((p)  => p.classList.toggle('is-active', p.dataset.tabPanel === k));
+    }));
+  }
+
+  /* ── Mega menu (hover + click) ──────────────────────────────── */
+  function bindMega(host) {
+    const triggers = host.querySelectorAll('[data-mega-trigger]');
+    const panels   = host.querySelectorAll('[data-mega-panel]');
+    let hideTimer;
+
+    function show(k) {
+      clearTimeout(hideTimer);
+      triggers.forEach((t) => t.classList.toggle('is-open', t.dataset.megaTrigger === k));
+      panels.forEach((p)   => p.classList.toggle('is-hidden', p.dataset.megaPanel !== k));
+    }
+    function hideSoon() {
+      hideTimer = setTimeout(() => {
+        triggers.forEach((t) => t.classList.remove('is-open'));
+        panels.forEach((p)   => p.classList.add('is-hidden'));
+      }, 200);
+    }
+    triggers.forEach((t) => {
+      t.addEventListener('mouseenter', () => show(t.dataset.megaTrigger));
+      t.addEventListener('mouseleave', hideSoon);
+      t.addEventListener('click', (e) => { e.stopPropagation(); show(t.dataset.megaTrigger); });
+    });
+    panels.forEach((p) => {
+      p.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+      p.addEventListener('mouseleave', hideSoon);
+    });
+    document.addEventListener('click', (e) => { if (!host.contains(e.target)) hideSoon(); });
+  }
+
+  /* ── Image compare slider ───────────────────────────────────── */
+  function bindCompare(host) {
+    const clip = host.querySelector('.clip');
+    const handle = host.querySelector('.handle');
+    if (!clip || !handle) return;
+    let dragging = false;
+    function setPct(pct) {
+      pct = Math.max(0, Math.min(100, pct));
+      clip.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+      handle.style.left = pct + '%';
+    }
+    function onMove(e) {
+      const rect = host.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      setPct((x / rect.width) * 100);
+    }
+    handle.addEventListener('mousedown',  () => { dragging = true; });
+    handle.addEventListener('touchstart', () => { dragging = true; });
+    window.addEventListener('mouseup',   () => { dragging = false; });
+    window.addEventListener('touchend',  () => { dragging = false; });
+    window.addEventListener('mousemove', (e) => { if (dragging) onMove(e); });
+    window.addEventListener('touchmove', (e) => { if (dragging) onMove(e); });
+    host.addEventListener('click', onMove);
+    setPct(50);
   }
 
   /* Mind map default data (used by Whiteboard page). */

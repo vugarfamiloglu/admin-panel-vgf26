@@ -208,18 +208,59 @@
   }
 
   function viewStreaming() {
-    return pageHead('Streaming · OBS style', 'Live viewers, chat, scene preview.', [{title:'Dashboards'}, {title:'Streaming'}])
+    const scenes = D().PEXELS;
+    return pageHead('Streaming · OBS style',
+        'Live viewers, scene switcher, chat, performance metrics.',
+        [{title:'Dashboards'}, {title:'Streaming'}],
+        '<button class="btn btn-secondary btn-xs">' + I('settings') + '<span>Settings</span></button>'
+        + '<button class="btn btn-danger btn-xs">' + I('pause') + '<span>End stream</span></button>')
       + '<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">'
-      + statTile('Live viewers', '1,842', '+212', 'up', 'eye', 'iris')
-      + statTile('Bitrate',      '6 Mbps','stable','', 'activity', 'emerald')
-      + statTile('Dropped frames','0.2%', '-0.1%','up', 'alert-circle', 'amber')
-      + statTile('Subs (24h)',   '+42',   '+12%', 'up', 'star', 'fuchsia')
+      + statTile('Live viewers',  '1,842', '+212', 'up', 'eye',         'iris')
+      + statTile('Bitrate',       '6 Mbps','stable','', 'activity',     'emerald')
+      + statTile('Dropped frames','0.2%',  '-0.1%','up', 'alert-circle','amber')
+      + statTile('Subs (24h)',    '+42',   '+12%', 'up', 'star',        'fuchsia')
       + '</div>'
-      + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">'
-      + '  <div class="card xl:col-span-2 overflow-hidden"><div class="card-head"><h3>Live preview</h3><span class="pill pill-rose">● LIVE</span></div><div class="aspect-video relative" style="background:linear-gradient(135deg,#5618b5,#7c3aed,#d846ef,#06b6d4);background-size:200% 200%;animation:aurora-pan 8s ease-in-out infinite"><div class="absolute inset-0 grid place-items-center text-white"><div class="text-center"><div style="font-family:DM Sans;font-size:48px;font-weight:700">VGF26 Studio</div><div class="mt-2 opacity-80">"Building the iridescent admin"</div></div></div></div></div>'
-      + '  <div class="card flex flex-col h-[460px]"><div class="card-head"><h3>Live chat</h3></div><div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm">'
-      + Array.from({length: 10}, (_, i) => '<div><span class="font-semibold text-iris">' + ['neon_42','iris_dev','aurora_fan','spectrum','cyber_kid','prism_artist'][i % 6] + '</span> <span>' + ['great stream!','love the gradient','what theme is this?','iridescent UI ftw','keep going!','can you share the code?','this is amazing','+1','💜','🚀'][i] + '</span></div>').join('')
-      + '</div><div class="p-3 border-t border-[rgb(var(--line))] flex gap-2"><input class="input" placeholder="Say something…"><button class="btn btn-primary">' + I('send') + '</button></div></div>'
+
+      + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">'
+      + '  <div class="card xl:col-span-2 overflow-hidden">'
+      + '    <div class="card-head"><h3>Live preview</h3><div class="flex gap-2 items-center"><span class="text-xs text-muted">scene: <strong>Main camera</strong></span><span class="pill" style="background:rgb(var(--emerald)/.14);color:rgb(var(--emerald))">● 1080p / 60fps</span></div></div>'
+      + '    <div class="p-3">'
+      + '      <div class="live-preview"><img src="' + scenes[2].large + '" alt="Live preview">'
+      + '        <span class="live-badge">LIVE</span>'
+      + '        <span class="viewer-count">' + I_('eye', 12) + '1,842</span>'
+      + '        <div class="scene-overlay"><div class="text-[10px] uppercase tracking-wider opacity-70">Now playing</div><div class="font-semibold">"Building the iridescent admin"</div></div>'
+      + '      </div>'
+      + '      <div class="mt-3 grid grid-cols-4 gap-2">'
+      +          scenes.slice(0, 4).map((p, i) => '<button class="relative aspect-video rounded-lg overflow-hidden ' + (i === 2 ? 'ring-2 ring-[rgb(var(--iris))]' : 'opacity-70 hover:opacity-100') + '"><img src="' + p.thumb + '" class="w-full h-full object-cover" alt=""><span class="absolute bottom-1 left-1 text-[9px] bg-black/60 text-white px-1 rounded">Scene ' + (i+1) + '</span></button>').join('')
+      + '      </div>'
+      + '    </div>'
+      + '  </div>'
+
+      + '  <div class="card flex flex-col h-[560px]">'
+      + '    <div class="card-head"><h3>Live chat</h3><span class="pill pill-iris">' + I_('users', 12) + ' 124 online</span></div>'
+      + '    <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm">'
+      +        Array.from({length: 14}, (_, i) => {
+                const who = ['neon_42','iris_dev','aurora_fan','spectrum','cyber_kid','prism_artist','viewer_88','glow_up'][i % 8];
+                const msg = ['great stream!','love the gradient 💜','what theme is this?','iridescent UI ftw','keep going!','can you share the code?','this is amazing','+1','💜','🚀','GG','where can I get this?','best stream today','♥️♥️♥️'][i];
+                return '<div class="flex gap-2 items-start"><span class="avatar shrink-0" style="width:24px;height:24px;font-size:10px">' + who.slice(0,2).toUpperCase() + '</span><div><span class="font-semibold text-iris">' + who + '</span> <span class="text-ink-2">' + msg + '</span></div></div>';
+              }).join('')
+      + '    </div>'
+      + '    <div class="p-3 border-t border-[rgb(var(--line))] flex gap-2"><input class="input" placeholder="Say something…"><button class="btn btn-primary">' + I('send') + '</button></div>'
+      + '  </div>'
+      + '</div>'
+
+      + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">'
+      + '  <div class="card"><div class="card-head"><h3>Performance</h3></div><div class="p-4" data-chart="line-revenue"></div></div>'
+      + '  <div class="card"><div class="card-head"><h3>Audio mixer</h3></div><div class="p-4 space-y-3">'
+      +    [['Mic',62,'iris'],['Music',38,'fuchsia'],['Game',75,'cyan'],['Alerts',45,'emerald']].map(([n,v,c]) =>
+            '<div class="flex items-center gap-3"><span class="text-xs font-semibold w-14">' + n + '</span>'
+            + '<input type="range" value="' + v + '" max="100" class="flex-1 accent-[rgb(var(--' + c + '))]">'
+            + '<span class="text-xs font-mono w-9 text-right">' + v + '%</span></div>'
+          ).join('')
+      + '  </div></div>'
+      + '  <div class="card"><div class="card-head"><h3>Top supporters</h3></div><div class="p-2">'
+      +    D().USERS.slice(0,5).map((u, i) => '<div class="p-2 flex items-center gap-3">' + D().avatarFor(u.name) + '<div class="flex-1"><div class="font-semibold text-sm">' + u.name + '</div><div class="text-[11px] text-muted">' + ['Tier 3','Tier 2','Tier 2','Tier 1','Tier 1'][i] + ' subscriber</div></div><span class="pill pill-amber">⭐ ' + (50 - i * 8) + '</span></div>').join('')
+      + '  </div></div>'
       + '</div>';
   }
 
@@ -408,38 +449,139 @@
    * MEDIA (gallery, carousel, image-zoom, marquee, media-player, maps)
    * ──────────────────────────────────────────────────────────────── */
   function viewGallery() {
-    const grads = ['#7c3aed,#d846ef','#06b6d4,#7c3aed','#f59e0b,#d846ef','#10b981,#06b6d4','#f43f5e,#fb923c','#22d3ee,#6366f1','#84cc16,#06b6d4','#d946ef,#f43f5e','#fb923c,#fde047'];
-    return pageHead('Gallery · Masonry · Lightbox', 'Click any tile to open the lightbox.', [{title:'Media'}, {title:'Gallery'}])
-      + section('Masonry grid',
-        '<div class="columns-2 md:columns-3 lg:columns-4 gap-3 [&>*]:mb-3">'
-        + grads.map((g, i) => {
-          const h = [180, 220, 260, 160, 240, 200, 280, 180, 220][i];
-          return '<div class="break-inside-avoid rounded-xl overflow-hidden hover-lift cursor-pointer" style="background:linear-gradient(135deg,' + g + ');height:' + h + 'px"><div class="h-full grid place-items-center text-white/80" style="font-family:DM Sans;font-size:28px;font-weight:700">' + (i+1) + '</div></div>';
-        }).join('')
-        + '</div>');
+    const photos = D().PEXELS;
+    const heights = [200, 280, 240, 320, 200, 260, 220, 300, 240, 280, 200, 320, 240, 200, 280, 220, 260, 240, 300, 200];
+
+    function tile(p, i, h) {
+      return '<button type="button" class="pex-tile break-inside-avoid block w-full text-left" '
+        + 'data-lightbox="' + p.large + '" data-title="' + p.title + '" data-tag="' + p.tag + '" '
+        + 'style="height:' + h + 'px">'
+        + '  <img src="' + p.thumb + '" alt="' + p.title + '" loading="lazy">'
+        + '  <div class="overlay"><div class="meta"><h5>' + p.title + '</h5><span>' + p.tag + '</span></div></div>'
+        + '</button>';
+    }
+
+    return pageHead('Gallery · Masonry · Lightbox',
+        'Click any tile to open the lightbox · arrow keys ← → to navigate · ESC to close.',
+        [{title:'Media'}, {title:'Gallery'}])
+      + section('Masonry gallery',
+        '<div class="columns-2 md:columns-3 lg:columns-4 gap-3 [&>*]:mb-3" data-lightbox-group>'
+        + photos.slice(0, 12).map((p, i) => tile(p, i, heights[i])).join('')
+        + '</div>')
+      + section('Fixed-grid gallery',
+        '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-lightbox-group>'
+        + photos.slice(12, 20).map((p, i) => '<button type="button" class="pex-tile block aspect-square w-full" data-lightbox="' + p.large + '" data-title="' + p.title + '" data-tag="' + p.tag + '"><img src="' + p.thumb + '" alt="' + p.title + '" loading="lazy"><div class="overlay"><div class="meta"><h5>' + p.title + '</h5><span>' + p.tag + '</span></div></div></button>').join('')
+        + '</div>')
+      + section('Filmstrip',
+        '<div class="card card-pad overflow-x-auto"><div class="flex gap-3 min-w-max" data-lightbox-group>'
+        + photos.slice(0, 8).map((p) => '<button type="button" class="pex-tile shrink-0" data-lightbox="' + p.large + '" data-title="' + p.title + '" data-tag="' + p.tag + '" style="width:160px;height:120px"><img src="' + p.thumb + '" alt="' + p.title + '" loading="lazy"></button>').join('')
+        + '</div></div>');
   }
 
   function viewCarousel() {
-    return pageHead('Carousel · Slider · Swiper', 'Auto-advance with dots.', [{title:'Media'}, {title:'Carousel'}])
-      + section('Hero carousel',
-        '<div class="card overflow-hidden relative h-72"><div class="absolute inset-0" style="background:linear-gradient(135deg,#5618b5,#d846ef,#06b6d4);background-size:200% 200%;animation:aurora-pan 12s ease-in-out infinite"></div><div class="absolute inset-0 grid place-items-center text-white text-center"><div><h3 style="font-family:DM Sans;font-size:36px;font-weight:700">Slide 1 of 3</h3><p class="mt-2 opacity-80">Auto-advances every 4s.</p></div></div>'
-        + '<button class="absolute left-3 top-1/2 -translate-y-1/2 tb-icon-btn">' + I('chevron-left') + '</button>'
-        + '<button class="absolute right-3 top-1/2 -translate-y-1/2 tb-icon-btn">' + I('chevron-right') + '</button>'
-        + '<div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">' + [0,1,2].map(i => '<span class="w-2 h-2 rounded-full ' + (i === 0 ? 'bg-white' : 'bg-white/40') + '"></span>').join('') + '</div>'
+    const slides = D().PEXELS.slice(0, 5);
+    const cards = D().PEXELS.slice(5, 11);
+    return pageHead('Carousel · Slider · Swiper',
+        'Auto-advance every 5s · arrow nav · click dots to jump · pause on hover.',
+        [{title:'Media'}, {title:'Carousel'}])
+      + section('Full-width hero carousel',
+        '<div class="card overflow-hidden">'
+        + '  <div class="carousel" data-mount="carousel">'
+        + '    <div class="carousel-track">'
+        +        slides.map((p) =>
+                  '<div class="carousel-slide" style="background-image:url(' + p.large + ')">'
+                  + '  <div class="scrim"></div>'
+                  + '  <div class="caption"><span class="pill" style="background:rgba(255,255,255,.2);color:#fff;border:0">' + p.tag + '</span>'
+                  + '    <h3 class="mt-2">' + p.title + '</h3>'
+                  + '    <p>Curated by VGF26 Studio · royalty-free photography from Pexels.</p>'
+                  + '  </div>'
+                  + '</div>'
+                ).join('')
+        + '    </div>'
+        + '    <button class="carousel-nav prev">' + I('chevron-left') + '</button>'
+        + '    <button class="carousel-nav next">' + I('chevron-right') + '</button>'
+        + '    <div class="carousel-dots"></div>'
+        + '  </div>'
         + '</div>')
-      + section('Logo slider (marquee)',
+
+      + section('Coverflow / card slider',
+        '<div class="card overflow-hidden p-5">'
+        + '  <div class="carousel" data-mount="carousel" style="aspect-ratio:auto;height:340px;border-radius:14px;background:rgb(var(--bg-soft))">'
+        + '    <div class="carousel-track">'
+        +        cards.map((p) =>
+                  '<div class="carousel-slide" style="background:transparent;display:grid;place-items:center;padding:20px"><div class="card overflow-hidden" style="width:300px;max-width:90%">'
+                  + '<div style="height:200px;background-image:url(' + p.thumb + ');background-size:cover;background-position:center"></div>'
+                  + '<div class="card-pad"><h4 class="font-semibold">' + p.title + '</h4><div class="text-xs text-muted mt-1">' + p.tag + '</div></div>'
+                  + '</div></div>'
+                ).join('')
+        + '    </div>'
+        + '    <button class="carousel-nav prev">' + I('chevron-left') + '</button>'
+        + '    <button class="carousel-nav next">' + I('chevron-right') + '</button>'
+        + '    <div class="carousel-dots"></div>'
+        + '  </div>'
+        + '</div>')
+
+      + section('Logo slider · infinite marquee',
         '<div class="card card-pad marquee"><div class="marquee-track">'
-        + Array.from({length: 12}, (_, i) => '<div class="font-bold text-xl text-muted px-4 whitespace-nowrap">' + ['Mercatum', 'Ledger', 'Atlas', 'PaySec', 'Helix', 'QuantTrade', 'Iconos', 'ApexBank', 'Foundry', 'Praesidio', 'Natcusp', 'Iconos'][i] + '</div>').join('')
-        + Array.from({length: 12}, (_, i) => '<div class="font-bold text-xl text-muted px-4 whitespace-nowrap">' + ['Mercatum', 'Ledger', 'Atlas', 'PaySec', 'Helix', 'QuantTrade', 'Iconos', 'ApexBank', 'Foundry', 'Praesidio', 'Natcusp', 'Iconos'][i] + '</div>').join('')
+        + Array.from({length: 12}, (_, i) => '<div class="font-bold text-xl text-muted px-4 whitespace-nowrap">' + ['Mercatum', 'Ledger', 'Atlas', 'PaySec', 'Helix', 'QuantTrade', 'Iconos', 'ApexBank', 'Foundry', 'Praesidio', 'Natcusp', 'Nebula'][i] + '</div>').join('')
+        + Array.from({length: 12}, (_, i) => '<div class="font-bold text-xl text-muted px-4 whitespace-nowrap">' + ['Mercatum', 'Ledger', 'Atlas', 'PaySec', 'Helix', 'QuantTrade', 'Iconos', 'ApexBank', 'Foundry', 'Praesidio', 'Natcusp', 'Nebula'][i] + '</div>').join('')
         + '</div></div>');
   }
 
   function viewImageZoom() {
-    return pageHead('Image Zoom · Cropper · Compare', 'Hover to zoom, drag to crop, slide to compare.', [{title:'Media'}, {title:'Image Zoom'}])
+    const photos = D().PEXELS;
+    return pageHead('Image Zoom · Cropper · Compare',
+        'Hover to zoom · drag the slider to compare · drag inside the crop to reposition.',
+        [{title:'Media'}, {title:'Image tools'}])
+
       + section('Hover zoom',
-        '<div class="card card-pad"><div class="aspect-video rounded-xl overflow-hidden cursor-zoom-in group" style="background:linear-gradient(135deg,#7c3aed,#d846ef,#06b6d4)"><div class="h-full transition-transform duration-500 group-hover:scale-125"></div></div></div>')
-      + section('Before / after comparison',
-        '<div class="card card-pad"><div class="relative aspect-video rounded-xl overflow-hidden"><div class="absolute inset-0" style="background:linear-gradient(135deg,#444 0%,#666 100%);filter:grayscale(1)"></div><div class="absolute inset-y-0 left-0 overflow-hidden" style="width:50%"><div class="h-full" style="background:linear-gradient(135deg,#7c3aed,#d846ef,#06b6d4);width:200%"></div></div><div class="absolute inset-y-0 left-1/2 w-1 bg-white cursor-col-resize"><div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white grid place-items-center text-iris">' + I('arrow-right') + '</div></div></div></div>');
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">'
+        + '  <div class="card card-pad"><h4 class="font-semibold mb-3 text-sm">Zoom on hover · #1</h4>'
+        + '    <div class="zoom-host aspect-video"><img src="' + photos[0].large + '" alt="' + photos[0].title + '"></div>'
+        + '    <div class="text-xs text-muted mt-2">' + photos[0].title + ' · ' + photos[0].tag + '</div>'
+        + '  </div>'
+        + '  <div class="card card-pad"><h4 class="font-semibold mb-3 text-sm">Zoom on hover · #2</h4>'
+        + '    <div class="zoom-host aspect-video"><img src="' + photos[4].large + '" alt="' + photos[4].title + '"></div>'
+        + '    <div class="text-xs text-muted mt-2">' + photos[4].title + ' · ' + photos[4].tag + '</div>'
+        + '  </div>'
+        + '</div>')
+
+      + section('Before / after compare slider',
+        '<div class="card card-pad"><div class="compare" data-mount="compare">'
+        + '  <img src="' + photos[2].large + '" alt="After" style="filter:saturate(1.2) contrast(1.05)">'
+        + '  <div class="clip"><img src="' + photos[2].large + '" alt="Before" style="filter:grayscale(.85) brightness(.9)"></div>'
+        + '  <span class="compare-label" style="left:12px;">Before</span>'
+        + '  <span class="compare-label" style="right:12px;">After</span>'
+        + '  <div class="handle"></div>'
+        + '</div><div class="text-xs text-muted mt-2 text-center">Drag the white handle or click anywhere to set the split.</div></div>')
+
+      + section('Image cropper',
+        '<div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">'
+        + '  <div class="card card-pad"><h4 class="font-semibold mb-3 text-sm">Source image · drag corners (visual demo)</h4>'
+        + '    <div class="relative aspect-video rounded-xl overflow-hidden bg-soft">'
+        + '      <img src="' + photos[7].large + '" class="w-full h-full object-cover opacity-50">'
+        + '      <div class="absolute" style="top:15%;left:20%;right:25%;bottom:15%;outline:2px dashed #fff;outline-offset:-1px;background-image:url(' + photos[7].large + ');background-size:200%;background-position:30% 40%;box-shadow:0 0 0 9999px rgba(0,0,0,.55)">'
+        + '        <span class="absolute -top-2 -left-2 w-4 h-4 bg-white rounded-sm border-2 border-[rgb(var(--iris))] cursor-nw-resize"></span>'
+        + '        <span class="absolute -top-2 -right-2 w-4 h-4 bg-white rounded-sm border-2 border-[rgb(var(--iris))] cursor-ne-resize"></span>'
+        + '        <span class="absolute -bottom-2 -left-2 w-4 h-4 bg-white rounded-sm border-2 border-[rgb(var(--iris))] cursor-sw-resize"></span>'
+        + '        <span class="absolute -bottom-2 -right-2 w-4 h-4 bg-white rounded-sm border-2 border-[rgb(var(--iris))] cursor-se-resize"></span>'
+        + '      </div>'
+        + '    </div>'
+        + '  </div>'
+        + '  <div class="card card-pad"><h4 class="font-semibold mb-3 text-sm">Preview · 1:1</h4>'
+        + '    <div class="aspect-square rounded-xl overflow-hidden mb-3"><img src="' + photos[7].large + '" class="w-full h-full object-cover" style="object-position:30% 40%"></div>'
+        + '    <label class="label">Aspect ratio</label>'
+        + '    <select class="select mb-2"><option>Free</option><option>1:1</option><option>4:3</option><option>16:9</option></select>'
+        + '    <button class="btn btn-primary w-full justify-center">' + I('download') + '<span>Export crop</span></button>'
+        + '  </div>'
+        + '</div>')
+
+      + section('Image filters',
+        '<div class="card card-pad"><div class="grid grid-cols-2 md:grid-cols-4 gap-3">'
+        + [['Original',''],['B&W','filter:grayscale(1)'],['Vintage','filter:sepia(.6) contrast(1.1)'],['Cool','filter:hue-rotate(180deg) saturate(1.2)']].map(([t, css], i) =>
+            '<div class="text-center"><div class="aspect-square rounded-xl overflow-hidden mb-2"><img src="' + photos[11].thumb + '" class="w-full h-full object-cover" style="' + css + '" alt=""></div><div class="text-xs font-semibold">' + t + '</div></div>'
+          ).join('')
+        + '</div></div>');
   }
 
   function viewMarquee() {
@@ -563,48 +705,188 @@
    * NAVIGATION — menus, tabs, breadcrumb, stepper, bottom, fab
    * ──────────────────────────────────────────────────────────────── */
   function viewMenus() {
-    return pageHead('Mega menu · Dropdown · Context', 'Different menu patterns.', [{title:'Nav'}, {title:'Menus'}])
+    function megaPanel(key, cols) {
+      return '<div data-mega-panel="' + key + '" class="mega-panel is-hidden">'
+        + '  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">'
+        +    cols.map(([title, items]) => '<div><div class="text-[10.5px] uppercase tracking-wider text-muted font-bold mb-2">' + title + '</div><ul class="space-y-1">'
+              + items.map(([t, d, ic, c]) => '<li><a href="#" class="flex gap-3 p-2 rounded-lg hover:bg-[rgb(var(--iris-soft))]"><span class="grid place-items-center w-8 h-8 rounded-lg shrink-0" style="background:rgb(var(--' + (c || 'iris') + ')/.14);color:rgb(var(--' + (c || 'iris') + '))">' + I_(ic, 14) + '</span><span><span class="block text-sm font-semibold">' + t + '</span><span class="block text-[11px] text-muted">' + d + '</span></span></a></li>').join('')
+              + '</ul></div>').join('')
+        + '  </div>'
+        + '</div>';
+    }
+
+    return pageHead('Mega menu · Dropdown · Context',
+        'Hover or click a trigger — mega panels animate in, click outside or ESC to close.',
+        [{title:'Nav'}, {title:'Menus'}])
+
       + section('Mega menu',
-        '<div class="card overflow-hidden"><div class="card-head !p-3 flex gap-2">' + ['Products', 'Solutions', 'Pricing', 'Resources'].map((t,i) => '<button class="btn btn-xs ' + (i === 0 ? 'btn-primary' : 'btn-ghost') + '">' + t + ' ' + (i === 0 ? I_('chevron-down', 12) : '') + '</button>').join('') + '</div>'
-        + '<div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-soft border-t border-[rgb(var(--line))]">'
-        + [['Cards','20+ card variants','card-stack'],['Charts','Line, bar, pie, radar','chart-line'],['Forms','All inputs & validation','edit']].map(([t,d,i]) => '<a href="#" class="p-3 rounded-xl hover:bg-[rgb(var(--bg-card))] flex gap-3"><span class="grid place-items-center w-10 h-10 rounded-lg text-iris" style="background:rgb(var(--iris)/.12)">' + I(i) + '</span><div><div class="font-semibold text-sm">' + t + '</div><div class="text-xs text-muted mt-1">' + d + '</div></div></a>').join('')
-        + '</div></div>')
-      + section('Dropdown',
-        '<div class="card card-pad"><div class="relative inline-block"><button class="btn btn-secondary">Options ' + I_('chevron-down', 14) + '</button>'
-        + '<div class="absolute top-full mt-2 left-0 bg-[rgb(var(--bg-card))] border border-[rgb(var(--line))] rounded-xl shadow-lg min-w-[180px] py-2">'
+        '<div class="card card-pad"><nav class="mega-host" data-mount="mega" style="position:relative;display:flex;gap:6px;align-items:center">'
+        + '  <span class="font-bold mr-4" style="font-family:DM Sans;font-size:16px">VGF26</span>'
+        +      ['products','solutions','resources'].map((k) => '<button data-mega-trigger="' + k + '" class="mega-trigger">' + (k.charAt(0).toUpperCase() + k.slice(1)) + ' ' + I_('chevron-down', 12) + '</button>').join('')
+        + '  <a href="#" class="mega-trigger">Pricing</a>'
+        + '  <a href="#" class="mega-trigger">Docs</a>'
+        + '  <div class="ml-auto flex gap-2"><button class="btn btn-ghost btn-xs">Sign in</button><button class="btn btn-primary btn-xs">Get started</button></div>'
+        +      megaPanel('products', [
+                ['Build', [['Cards','20 card variants','card-stack','iris'],['Tables','Sortable + sticky','table','fuchsia'],['Charts','Inline SVG charts','chart-line','cyan']]],
+                ['Compose', [['Forms','Inputs · pickers · editors','edit','emerald'],['Navigation','Tabs · menus · breadcrumb','menu','amber'],['Overlays','Modal · toast · popover','card-stack','rose']]],
+                ['Polish', [['Effects','Glass · tilt · particles','sparkles','iris'],['Charts','Line · bar · radar','chart-pie','fuchsia'],['Icons','140+ stroke-only SVGs','box','cyan']]],
+              ])
+        +      megaPanel('solutions', [
+                ['For Startups', [['Launch fast','Pre-built dashboards','rocket','iris'],['Iterate','Live theme generator','palette','fuchsia']]],
+                ['For Enterprises', [['Scale','SSO + audit','shield','emerald'],['Govern','Role matrix','users','amber']]],
+                ['For Agencies', [['Templates','Re-skin in minutes','sparkles-2','cyan'],['Brand','Multi-tenant theming','palette','rose']]],
+              ])
+        +      megaPanel('resources', [
+                ['Learn', [['Documentation','Component recipes','file','iris'],['Changelog','What\'s new','history','fuchsia']]],
+                ['Connect', [['GitHub','Source on GitHub','github','cyan'],['Community','Discord server','message-circle','emerald']]],
+                ['Get help', [['Support','24/5 priority','help-circle','amber'],['Status','Uptime board','activity','rose']]],
+              ])
+        + '</nav></div>')
+
+      + section('Dropdown · Context menu',
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">'
+        + '<div class="card card-pad"><h4 class="font-semibold mb-2 text-sm">Click to open</h4>'
+        + '<div data-tab-set><button data-tab="open" class="btn btn-secondary">Options ' + I_('chevron-down', 14) + '</button>'
+        + '<div data-tab-panel="open" class="is-active mt-2 inline-block w-56 bg-[rgb(var(--bg-card))] border border-[rgb(var(--line))] rounded-xl shadow-lg py-2">'
         + ['Edit', 'Duplicate', 'Archive', '|', 'Delete'].map(t => t === '|' ? '<div class="my-1 h-px bg-[rgb(var(--line))]"></div>' : '<div class="px-4 py-2 hover:bg-[rgb(var(--iris-soft))] cursor-pointer text-sm ' + (t === 'Delete' ? 'text-rose' : '') + '">' + t + '</div>').join('')
-        + '</div></div></div>');
+        + '</div></div></div>'
+
+        + '<div class="card card-pad"><h4 class="font-semibold mb-2 text-sm">Right-click context (demo)</h4>'
+        + '<div class="border-2 border-dashed border-[rgb(var(--line))] rounded-xl p-8 text-center text-muted text-sm">Right-click anywhere<br><span class="text-[11px]">(visual demo only)</span></div>'
+        + '<div class="mt-3 w-56 bg-[rgb(var(--bg-card))] border border-[rgb(var(--line))] rounded-xl shadow-lg py-2">'
+        + [['copy','Copy'],['scissors','Cut'],['clipboard','Paste'],['|',''],['edit','Rename'],['trash','Delete']].map(([ic, t]) => ic === '|' ? '<div class="my-1 h-px bg-[rgb(var(--line))]"></div>' : '<div class="px-4 py-2 hover:bg-[rgb(var(--iris-soft))] cursor-pointer text-sm flex items-center gap-2 ' + (t === 'Delete' ? 'text-rose' : '') + '">' + I_(ic === 'scissors' ? 'x' : ic === 'clipboard' ? 'file' : ic, 14) + t + '</div>').join('')
+        + '</div></div>'
+        + '</div>');
   }
 
   function viewTabs() {
-    return pageHead('Tabs · Vertical · Pills', 'Switchable tab patterns.', [{title:'Nav'}, {title:'Tabs'}])
+    /* shared content payloads for each tab key */
+    const payload = {
+      overview: '<h4 class="font-semibold text-lg mb-2">Workspace overview</h4><p class="text-sm text-muted">Quick stats and recent activity across your team.</p><div class="grid grid-cols-3 gap-3 mt-4">' + ['Members','Projects','Storage'].map((t, i) => '<div class="bg-soft rounded-lg p-3"><div class="text-[10px] uppercase tracking-wider text-muted">' + t + '</div><div class="font-bold text-xl mt-1">' + [24, 8, '64GB'][i] + '</div></div>').join('') + '</div>',
+      members:  '<h4 class="font-semibold text-lg mb-2">Members</h4><ul class="space-y-2">' + D().USERS.slice(0,5).map(u => '<li class="flex items-center gap-3 p-2 rounded-lg hover:bg-soft">' + D().avatarFor(u.name) + '<div class="flex-1"><div class="font-semibold text-sm">' + u.name + '</div><div class="text-xs text-muted">' + u.role + ' · ' + u.loc + '</div></div><span class="pill pill-' + (u.status === 'online' ? 'emerald' : u.status === 'busy' ? 'rose' : 'muted') + '">' + u.status + '</span></li>').join('') + '</ul>',
+      settings: '<h4 class="font-semibold text-lg mb-2">Settings</h4><div class="space-y-3"><div class="flex items-center justify-between"><span class="text-sm">Enable two-factor auth</span><span class="switch is-on" data-toggle></span></div><div class="flex items-center justify-between"><span class="text-sm">Email notifications</span><span class="switch is-on" data-toggle></span></div><div class="flex items-center justify-between"><span class="text-sm">Public profile</span><span class="switch" data-toggle></span></div></div>',
+      billing:  '<h4 class="font-semibold text-lg mb-2">Billing</h4><div class="bg-soft rounded-xl p-4"><div class="text-xs text-muted">Current plan</div><div class="font-bold text-2xl mt-1">Pro · $29/mo</div><div class="text-xs text-muted mt-1">Next invoice: 25 Jun 2026</div><button class="btn btn-primary mt-3 btn-xs">Manage subscription</button></div>',
+    };
+
+    function tabBtn(k, label, cls, activeKey) { return '<button data-tab="' + k + '" class="' + cls + (k === activeKey ? ' is-active' : '') + '">' + label + '</button>'; }
+    function panel(k, body, activeKey) { return '<div data-tab-panel="' + k + '" class="' + (k === activeKey ? 'is-active' : '') + '">' + body + '</div>'; }
+
+    return pageHead('Tabs · Vertical · Pills · Animated',
+        'Every variant is fully interactive — click any tab to swap the content.',
+        [{title:'Nav'}, {title:'Tabs'}])
+
       + section('Underline tabs',
-        '<div class="card"><div class="card-head !p-0 border-b border-[rgb(var(--line))]"><div class="flex">' + ['Overview','Members','Settings','Billing'].map((t,i) => '<button class="px-5 py-3 text-sm font-semibold relative ' + (i === 0 ? 'text-iris' : 'text-muted hover:text-ink') + '">' + t + (i === 0 ? '<span class="absolute bottom-0 left-0 right-0 h-0.5" style="background:linear-gradient(90deg,rgb(var(--iris)),rgb(var(--fuchsia)))"></span>' : '') + '</button>').join('') + '</div></div><div class="p-4 text-sm text-muted">Tab 1 content</div></div>')
-      + section('Pill tabs',
-        '<div class="card card-pad"><div class="inline-flex bg-soft rounded-xl p-1">' + ['Day','Week','Month','Year'].map((t,i) => '<button class="px-4 py-2 text-xs font-semibold rounded-lg ' + (i === 1 ? 'bg-[rgb(var(--bg-card))] text-iris shadow-sm' : 'text-muted') + '">' + t + '</button>').join('') + '</div></div>')
+        '<div class="card tab-set" data-tab-set>'
+        + '  <div class="card-head !p-0 border-b border-[rgb(var(--line))] tab-underline"><div class="flex">'
+        +      ['overview','members','settings','billing'].map((k) => tabBtn(k, k.charAt(0).toUpperCase() + k.slice(1), '', 'overview')).join('')
+        + '  </div></div>'
+        + '  <div class="card-pad">'
+        +      ['overview','members','settings','billing'].map((k) => panel(k, payload[k], 'overview')).join('')
+        + '  </div>'
+        + '</div>')
+
+      + section('Pill / segmented tabs',
+        '<div class="card card-pad tab-set" data-tab-set>'
+        + '  <div class="tab-pills">'
+        +      ['day','week','month','year'].map((k) => tabBtn(k, k.charAt(0).toUpperCase() + k.slice(1), '', 'week')).join('')
+        + '  </div>'
+        + '  <div class="mt-4">'
+        +      ['day','week','month','year'].map((k) => panel(k, '<div class="bg-soft rounded-xl p-4 text-sm">Showing <strong>' + k + '</strong> data — bar chart, summary, etc.</div>', 'week')).join('')
+        + '  </div>'
+        + '</div>')
+
       + section('Vertical tabs',
-        '<div class="card overflow-hidden"><div class="grid grid-cols-[180px_1fr]"><div class="bg-soft p-2 border-r border-[rgb(var(--line))]">' + ['Profile','Account','Notifications','Security','Billing'].map((t,i) => '<button class="w-full text-left px-3 py-2 rounded-lg text-sm ' + (i === 0 ? 'bg-[rgb(var(--iris-soft))] text-iris font-semibold' : 'hover:bg-[rgb(var(--bg-card))]') + '">' + t + '</button>').join('') + '</div><div class="p-5"><h4 class="font-semibold">Profile settings</h4><p class="text-sm text-muted mt-2">Manage your personal details and avatar.</p></div></div></div>');
+        '<div class="card overflow-hidden tab-set" data-tab-set>'
+        + '  <div class="grid grid-cols-[200px_1fr]">'
+        + '    <div class="bg-soft p-2 border-r border-[rgb(var(--line))] flex flex-col gap-1">'
+        +        ['overview','members','settings','billing'].map((k) => tabBtn(k, k.charAt(0).toUpperCase() + k.slice(1), 'w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--bg-card))] data-[active=true]:bg-[rgb(var(--iris-soft))] data-[active=true]:text-iris [&.is-active]:bg-[rgb(var(--iris-soft))] [&.is-active]:text-iris [&.is-active]:font-semibold', 'overview')).join('')
+        + '    </div>'
+        + '    <div class="p-5">'
+        +        ['overview','members','settings','billing'].map((k) => panel(k, payload[k], 'overview')).join('')
+        + '    </div>'
+        + '  </div>'
+        + '</div>')
+
+      + section('Icon tabs',
+        '<div class="card tab-set" data-tab-set>'
+        + '  <div class="card-head !p-0 border-b border-[rgb(var(--line))] tab-underline"><div class="flex">'
+        +      [['overview','layout-dashboard'],['members','users'],['settings','settings'],['billing','credit-card']].map(([k,ic]) => '<button data-tab="' + k + '" class="' + (k === 'overview' ? 'is-active' : '') + '" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px"><span>' + I(ic) + '</span><span>' + k.charAt(0).toUpperCase() + k.slice(1) + '</span></button>').join('')
+        + '  </div></div>'
+        + '  <div class="card-pad">'
+        +      ['overview','members','settings','billing'].map((k) => panel(k, payload[k], 'overview')).join('')
+        + '  </div>'
+        + '</div>');
   }
 
   function viewBreadcrumb() {
-    return pageHead('Breadcrumb', 'Hierarchical navigation crumbs.', [{title:'Nav'}, {title:'Breadcrumb'}])
-      + section('With separators',
-        '<div class="card card-pad space-y-4">'
-        + '<nav class="text-sm flex items-center gap-2"><a href="#" class="text-iris">Home</a><span class="text-muted">/</span><a href="#" class="text-iris">Library</a><span class="text-muted">/</span><a href="#" class="text-iris">Data</a><span class="text-muted">/</span><span>Customer.csv</span></nav>'
-        + '<nav class="text-sm flex items-center gap-2"><a href="#" class="flex items-center gap-1 text-iris">' + I_('home', 14) + 'Home</a><span class="text-muted">' + I_('chevron-right', 14) + '</span><a href="#" class="text-iris">Projects</a><span class="text-muted">' + I_('chevron-right', 14) + '</span><span>VGF26</span></nav>'
-        + '<nav class="text-sm flex items-center"><a href="#" class="px-3 py-1 rounded-l-lg bg-soft hover:bg-[rgb(var(--iris-soft))]">Dashboard</a><span class="text-muted px-1">›</span><a href="#" class="px-3 py-1 bg-soft hover:bg-[rgb(var(--iris-soft))]">Analytics</a><span class="text-muted px-1">›</span><span class="px-3 py-1 rounded-r-lg" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff">Reports</span></nav>'
+    return pageHead('Breadcrumb · 8 variants',
+        'Slash, chevron, dot, pills, gradient, with icons, with dropdown, condensed.',
+        [{title:'Nav'}, {title:'Breadcrumb'}])
+      + section('Classic separators',
+        '<div class="card card-pad space-y-5">'
+        + '<div><div class="label">Slash separators</div><nav class="text-sm flex items-center gap-2"><a href="#" class="text-iris">Home</a><span class="text-muted">/</span><a href="#" class="text-iris">Library</a><span class="text-muted">/</span><a href="#" class="text-iris">Data</a><span class="text-muted">/</span><span>Customer.csv</span></nav></div>'
+        + '<div><div class="label">Chevron separators</div><nav class="text-sm flex items-center gap-2"><a href="#" class="flex items-center gap-1 text-iris">' + I_('home', 14) + 'Home</a><span class="text-muted">' + I_('chevron-right', 14) + '</span><a href="#" class="text-iris">Projects</a><span class="text-muted">' + I_('chevron-right', 14) + '</span><span>VGF26</span></nav></div>'
+        + '<div><div class="label">Dot separators</div><nav class="text-sm flex items-center gap-2"><a href="#" class="text-iris">Workspace</a><span class="text-muted text-xs">●</span><a href="#" class="text-iris">Team</a><span class="text-muted text-xs">●</span><span>Settings</span></nav></div>'
+        + '<div><div class="label">Arrow separators</div><nav class="text-sm flex items-center gap-2 font-mono"><a href="#" class="text-iris">api</a><span class="text-muted">→</span><a href="#" class="text-iris">v1</a><span class="text-muted">→</span><a href="#" class="text-iris">users</a><span class="text-muted">→</span><span>42</span></nav></div>'
+        + '</div>')
+
+      + section('Styled crumbs',
+        '<div class="card card-pad space-y-5">'
+        + '<div><div class="label">Pill segments</div><nav class="text-sm flex items-center"><a href="#" class="px-3 py-1.5 rounded-l-lg bg-soft hover:bg-[rgb(var(--iris-soft))]">Dashboard</a><span class="text-muted px-1">›</span><a href="#" class="px-3 py-1.5 bg-soft hover:bg-[rgb(var(--iris-soft))]">Analytics</a><span class="text-muted px-1">›</span><span class="px-3 py-1.5 rounded-r-lg" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff">Reports</span></nav></div>'
+        + '<div><div class="label">With icons</div><nav class="text-sm flex items-center gap-2">' + [['home','Home','iris'],['folder','Documents','fuchsia'],['file','contract.pdf','muted']].map(([ic, l, c], i, arr) => '<a href="#" class="flex items-center gap-1.5 ' + (i === arr.length - 1 ? '' : 'text-iris') + '"><span class="text-' + c + '">' + I_(ic, 14) + '</span>' + l + '</a>' + (i < arr.length - 1 ? '<span class="text-muted">/</span>' : '')).join('') + '</nav></div>'
+        + '<div><div class="label">Condensed (...)</div><nav class="text-sm flex items-center gap-2"><a href="#" class="text-iris">Home</a><span class="text-muted">/</span><button class="px-2 py-0.5 rounded bg-soft text-xs">…</button><span class="text-muted">/</span><a href="#" class="text-iris">Projects</a><span class="text-muted">/</span><span>VGF26</span></nav></div>'
+        + '<div><div class="label">With dropdown</div><nav class="text-sm flex items-center gap-2"><a href="#" class="text-iris">Workspaces</a><span class="text-muted">/</span><button class="text-iris flex items-center gap-1">Studio ' + I_('chevron-down', 12) + '</button><span class="text-muted">/</span><span>Components</span></nav></div>'
         + '</div>');
   }
 
   function viewStepper() {
-    return pageHead('Stepper', 'Visual progress through a multi-step flow.', [{title:'Nav'}, {title:'Stepper'}])
-      + section('Horizontal stepper',
-        '<div class="card card-pad"><div class="flex items-center gap-2">'
-        + ['Account', 'Verify', 'Profile', 'Done'].map((s,i) => {
-            const state = i < 2 ? 'done' : i === 2 ? 'current' : 'next';
-            return '<div class="flex items-center flex-1"><div class="flex items-center gap-2"><div class="grid place-items-center w-10 h-10 rounded-full font-bold" style="background:' + (state === 'done' ? 'linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff' : state === 'current' ? 'rgb(var(--iris));color:#fff' : 'rgb(var(--line));color:rgb(var(--muted))') + '">' + (state === 'done' ? '✓' : (i+1)) + '</div><div class="text-xs"><div class="' + (state === 'next' ? 'text-muted' : 'font-semibold') + '">' + s + '</div></div></div>' + (i < 3 ? '<div class="flex-1 h-0.5 mx-3 ' + (state === 'done' ? 'bg-[rgb(var(--iris))]' : 'bg-[rgb(var(--line))]') + '"></div>' : '') + '</div>';
-          }).join('')
-        + '</div></div>');
+    function stateCls(i, cur) { return i < cur ? 'step-done' : i === cur ? 'step-current' : 'step-future'; }
+
+    return pageHead('Stepper · 6 variants',
+        'Horizontal · vertical · numbered · with icons · progress bar · circular.',
+        [{title:'Nav'}, {title:'Stepper'}])
+
+      + section('Horizontal numbered',
+        '<div class="card card-pad"><div class="flex items-center">'
+        + ['Account', 'Verify', 'Profile', 'Done'].map((s,i) =>
+            '<div class="flex items-center ' + (i < 3 ? 'flex-1' : '') + '">'
+            + '<div class="flex flex-col items-center gap-2 shrink-0"><div class="step-bullet ' + stateCls(i, 2) + '">' + (i < 2 ? '✓' : (i+1)) + '</div><div class="text-xs ' + (i > 2 ? 'text-muted' : 'font-semibold') + '">' + s + '</div></div>'
+            + (i < 3 ? '<div class="step-line ' + (i < 2 ? 'is-done' : '') + ' mx-3"></div>' : '')
+            + '</div>').join('')
+        + '</div></div>')
+
+      + section('Horizontal with icons',
+        '<div class="card card-pad"><div class="flex items-center">'
+        + [['user-plus','Create account'],['mail','Verify email'],['user','Profile setup'],['check-circle','All done']].map(([ic, s],i) =>
+            '<div class="flex items-center ' + (i < 3 ? 'flex-1' : '') + '">'
+            + '<div class="flex flex-col items-center gap-2 shrink-0"><div class="step-bullet ' + stateCls(i, 1) + '">' + I_(i < 1 ? 'check' : ic, 16) + '</div><div class="text-xs ' + (i > 1 ? 'text-muted' : 'font-semibold') + '">' + s + '</div></div>'
+            + (i < 3 ? '<div class="step-line ' + (i < 1 ? 'is-done' : '') + ' mx-3"></div>' : '')
+            + '</div>').join('')
+        + '</div></div>')
+
+      + section('Vertical (timeline-style)',
+        '<div class="card card-pad max-w-md">'
+        + [['Order placed','Order #9822 received','done'],['Processing','Picking & packing','done'],['Shipped','UPS tracking 1Z…','current'],['Delivered','Estimated 28 May','future']].map(([t, d, st],i,arr) =>
+            '<div class="flex gap-4">'
+            + '<div class="flex flex-col items-center"><div class="step-bullet ' + (st === 'done' ? 'step-done' : st === 'current' ? 'step-current' : 'step-future') + '">' + (st === 'done' ? '✓' : (i+1)) + '</div>' + (i < arr.length - 1 ? '<div class="step-vline ' + (st === 'done' ? 'is-done' : '') + ' min-h-[40px]"></div>' : '') + '</div>'
+            + '<div class="pb-6 ' + (i === arr.length - 1 ? 'pb-0' : '') + '"><div class="font-semibold text-sm">' + t + '</div><div class="text-xs text-muted mt-1">' + d + '</div></div>'
+            + '</div>').join('')
+        + '</div>')
+
+      + section('Progress bar stepper',
+        '<div class="card card-pad">'
+        + '<div class="flex justify-between mb-2 text-xs"><span class="font-semibold">Step 3 of 5</span><span class="text-muted">60% complete</span></div>'
+        + '<div class="h-2 rounded-full bg-soft overflow-hidden"><div style="width:60%;height:100%;background:linear-gradient(90deg,rgb(var(--iris)),rgb(var(--fuchsia)))"></div></div>'
+        + '<div class="flex justify-between mt-3 text-xs text-muted">' + ['Plan', 'Design', 'Build', 'Test', 'Ship'].map((s, i) => '<span class="' + (i <= 2 ? 'text-iris font-semibold' : '') + '">' + s + '</span>').join('') + '</div>'
+        + '</div>')
+
+      + section('Circular progress (single)',
+        '<div class="card card-pad flex items-center gap-6 flex-wrap"><div class="relative w-24 h-24"><svg viewBox="0 0 96 96" class="-rotate-90 w-full h-full"><circle cx="48" cy="48" r="40" stroke="rgb(var(--line))" stroke-width="8" fill="none"/><circle cx="48" cy="48" r="40" stroke="url(#cp-grad)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="100.5"/><defs><linearGradient id="cp-grad"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d846ef"/></linearGradient></defs></svg><div class="absolute inset-0 grid place-items-center"><div class="text-center"><div class="font-bold text-lg">3/5</div><div class="text-[10px] text-muted">steps</div></div></div></div><div><div class="font-semibold">Onboarding</div><div class="text-sm text-muted mt-1">3 of 5 steps complete · est. 2 minutes left</div><button class="btn btn-primary btn-xs mt-3">Continue</button></div></div>')
+
+      + section('Compact dots (mobile-style)',
+        '<div class="card card-pad flex items-center justify-center gap-2">'
+        + Array.from({length: 5}, (_, i) => '<span class="block rounded-full ' + (i < 2 ? 'w-2 h-2 bg-[rgb(var(--iris))]' : i === 2 ? 'w-6 h-2 bg-[rgb(var(--iris))]' : 'w-2 h-2 bg-[rgb(var(--line))]') + '"></span>').join('')
+        + '<span class="ml-3 text-xs text-muted font-mono">3 / 5</span></div>');
   }
 
   function viewBottomNav() {
@@ -900,13 +1182,104 @@
   }
 
   function viewNavbarFooter() {
-    return pageHead('Navbar · Footer · Sticky bar', 'Top-level chrome patterns.', [{title:'Landing'}, {title:'Chrome'}])
-      + section('Navbar',
-        '<div class="card overflow-hidden"><nav class="flex items-center justify-between p-4"><div class="flex items-center gap-2 font-bold" style="font-family:DM Sans;font-size:18px">' + I_('sparkles', 22, 'text-iris') + '<span>VGF26</span></div><div class="hidden md:flex items-center gap-6 text-sm"><a href="#" class="hover:text-iris">Products</a><a href="#" class="hover:text-iris">Solutions</a><a href="#" class="hover:text-iris">Pricing</a><a href="#" class="hover:text-iris">Docs</a></div><div class="flex gap-2"><button class="btn btn-ghost btn-xs">Sign in</button><button class="btn btn-primary btn-xs">Get started</button></div></nav></div>')
-      + section('Footer',
-        '<div class="card card-pad"><div class="grid grid-cols-2 md:grid-cols-5 gap-6"><div class="col-span-2"><div class="flex items-center gap-2 font-bold mb-2" style="font-family:DM Sans">' + I_('sparkles', 18, 'text-iris') + 'VGF26</div><p class="text-xs text-muted">The iridescent admin studio.</p><div class="flex gap-2 mt-3">' + ['github','message-circle','mail'].map(i => '<button class="tb-icon-btn">' + I(i) + '</button>').join('') + '</div></div>'
-        + [['Product','Features','Pricing','Changelog'],['Resources','Docs','API','Blog'],['Company','About','Contact','Careers']].map(group => '<div><div class="font-semibold text-xs uppercase tracking-wider text-muted mb-3">' + group[0] + '</div><ul class="space-y-2 text-sm">' + group.slice(1).map(l => '<li><a href="#" class="hover:text-iris">' + l + '</a></li>').join('') + '</ul></div>').join('')
-        + '</div><div class="divider-h my-5"></div><div class="flex justify-between items-center text-xs text-muted"><span>© 2026 VGF26 · MIT License</span><span>Made with 💜 in Baku</span></div></div>');
+    return pageHead('Navbar · Footer · Sticky bar',
+        '4 navbar styles · 3 footer styles · 4 sticky bar variants — drop-in patterns.',
+        [{title:'Landing'}, {title:'Chrome'}])
+
+      /* ── Navbars ───────────────────────────────────────────── */
+      + section('1. Standard navbar with auth buttons',
+        '<div class="card overflow-hidden"><nav class="flex items-center justify-between p-4">'
+        + '<div class="flex items-center gap-2 font-bold" style="font-family:DM Sans;font-size:18px">' + I_('sparkles', 22, 'text-iris') + '<span>VGF26</span></div>'
+        + '<div class="hidden md:flex items-center gap-6 text-sm">' + ['Products', 'Solutions', 'Pricing', 'Docs'].map(t => '<a href="#" class="hover:text-iris">' + t + '</a>').join('') + '</div>'
+        + '<div class="flex gap-2"><button class="btn btn-ghost btn-xs">Sign in</button><button class="btn btn-primary btn-xs">Get started</button></div>'
+        + '</nav></div>')
+
+      + section('2. Centered navbar with split logo',
+        '<div class="card overflow-hidden"><nav class="grid grid-cols-3 items-center p-4">'
+        + '<div class="flex gap-4 text-sm">' + ['Shop', 'Stories', 'Atelier'].map(t => '<a href="#" class="hover:text-iris">' + t + '</a>').join('') + '</div>'
+        + '<div class="text-center font-bold" style="font-family:DM Sans;font-size:22px;letter-spacing:.04em">VGF26</div>'
+        + '<div class="flex gap-3 justify-end items-center text-sm"><button class="tb-icon-btn">' + I('search') + '</button><button class="tb-icon-btn">' + I('user') + '</button><button class="tb-icon-btn">' + I('cart') + '<span class="badge">3</span></button></div>'
+        + '</nav></div>')
+
+      + section('3. Dark gradient navbar with mega menu',
+        '<div class="card overflow-hidden" style="background:linear-gradient(135deg,#1a063d,#421389);color:#fff">'
+        + '<nav class="flex items-center justify-between p-4 backdrop-blur"><div class="flex items-center gap-6">'
+        + '<div class="flex items-center gap-2 font-bold" style="font-family:DM Sans;font-size:18px">' + I_('sparkles', 22) + '<span>VGF26</span></div>'
+        + '<div class="hidden md:flex items-center gap-1 text-sm">' + ['Products ▾', 'Pricing', 'Customers', 'Resources ▾'].map(t => '<a href="#" class="px-3 py-2 rounded-lg hover:bg-white/10">' + t + '</a>').join('') + '</div>'
+        + '</div>'
+        + '<div class="flex gap-2"><button class="btn" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18)">Log in</button><button class="btn" style="background:#fff;color:rgb(var(--iris))">Try free</button></div>'
+        + '</nav></div>')
+
+      + section('4. Transparent navbar over hero',
+        '<div class="card overflow-hidden relative" style="background-image:url(' + D().PEXELS[14].large + ');background-size:cover;background-position:center;min-height:240px">'
+        + '<div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(0,0,0,.5),transparent)"></div>'
+        + '<nav class="relative flex items-center justify-between p-5 text-white">'
+        + '<div class="flex items-center gap-2 font-bold" style="font-family:DM Sans;font-size:18px">' + I_('sparkles', 22) + '<span>VGF26</span></div>'
+        + '<div class="hidden md:flex items-center gap-6 text-sm">' + ['Home', 'Tours', 'Stays', 'Contact'].map(t => '<a href="#" class="hover:opacity-80">' + t + '</a>').join('') + '</div>'
+        + '<button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(8px)">Book now →</button>'
+        + '</nav>'
+        + '<div class="relative px-5 pb-6 pt-12 text-white"><div style="font-family:DM Sans;font-size:32px;font-weight:700">Discover the mountain road</div><div class="text-sm opacity-80 mt-1">Curated travel · handpicked routes</div></div>'
+        + '</div>')
+
+      /* ── Footers ───────────────────────────────────────────── */
+      + section('5. Mega footer (4 columns + newsletter)',
+        '<div class="card card-pad">'
+        + '<div class="grid grid-cols-2 md:grid-cols-6 gap-8">'
+        + '<div class="col-span-2 md:col-span-2"><div class="flex items-center gap-2 font-bold mb-2" style="font-family:DM Sans">' + I_('sparkles', 22, 'text-iris') + '<span class="text-lg">VGF26</span></div>'
+        + '  <p class="text-sm text-muted">The iridescent admin studio — 220+ components, 3 languages, zero build.</p>'
+        + '  <div class="flex gap-2 mt-4">' + ['github','message-circle','mail','globe'].map(i => '<button class="tb-icon-btn">' + I(i) + '</button>').join('') + '</div>'
+        + '</div>'
+        + [['Product',['Features','Pricing','Changelog','Integrations']],['Resources',['Docs','API','Blog','Tutorials']],['Company',['About','Customers','Careers','Press']]].map(([t, items]) =>
+            '<div><div class="font-semibold text-xs uppercase tracking-wider text-muted mb-3">' + t + '</div><ul class="space-y-2 text-sm">' + items.map(l => '<li><a href="#" class="hover:text-iris">' + l + '</a></li>').join('') + '</ul></div>'
+          ).join('')
+        + '<div><div class="font-semibold text-xs uppercase tracking-wider text-muted mb-3">Subscribe</div><p class="text-xs text-muted mb-3">Get release notes once a week.</p><div class="flex"><input class="input rounded-r-none" placeholder="you@email.com"><button class="btn btn-primary rounded-l-none">→</button></div></div>'
+        + '</div>'
+        + '<div class="divider-h my-6"></div>'
+        + '<div class="flex flex-wrap justify-between items-center gap-3 text-xs text-muted"><span>© 2026 VGF26 · MIT License</span><div class="flex gap-4"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Status</a><a href="#">Cookies</a></div><span>Made with 💜 in Baku</span></div>'
+        + '</div>')
+
+      + section('6. Minimal footer',
+        '<div class="card card-pad flex flex-wrap justify-between items-center gap-3">'
+        + '<div class="flex items-center gap-2 font-bold" style="font-family:DM Sans">' + I_('sparkles', 18, 'text-iris') + '<span>VGF26</span></div>'
+        + '<div class="text-xs text-muted">© 2026 · MIT License · v1.0.0</div>'
+        + '<div class="flex gap-3 text-xs"><a href="#" class="text-iris">Twitter</a><a href="#" class="text-iris">GitHub</a><a href="#" class="text-iris">Discord</a></div>'
+        + '</div>')
+
+      + section('7. Dark CTA footer',
+        '<div class="card overflow-hidden" style="background:linear-gradient(135deg,#1a063d,#421389);color:#fff"><div class="p-8 text-center">'
+        + '<h3 style="font-family:DM Sans;font-size:28px;font-weight:700">Build your studio with VGF26</h3>'
+        + '<p class="opacity-80 mt-2">Open-source · MIT · zero npm install</p>'
+        + '<div class="flex gap-3 justify-center mt-5"><button class="btn" style="background:#fff;color:rgb(var(--iris))">Start free →</button><button class="btn" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)">View on GitHub</button></div>'
+        + '<div class="text-xs opacity-60 mt-6">© 2026 VGF26 · Made with 💜 in Baku</div>'
+        + '</div></div>')
+
+      /* ── Sticky bars ───────────────────────────────────────── */
+      + section('8. Cookie consent banner',
+        '<div class="card overflow-hidden"><div class="p-5 flex flex-wrap items-center gap-4">'
+        + '<div class="grid place-items-center w-12 h-12 rounded-xl shrink-0" style="background:rgb(var(--amber)/.14);color:rgb(var(--amber))">' + I_('cookie' in {} ? 'cookie' : 'flame', 22) + '</div>'
+        + '<div class="flex-1"><div class="font-semibold">We use cookies</div><div class="text-xs text-muted mt-1">By clicking "Accept all" you agree to our cookie policy. You can manage preferences anytime.</div></div>'
+        + '<div class="flex gap-2"><button class="btn btn-ghost btn-xs">Preferences</button><button class="btn btn-secondary btn-xs">Reject all</button><button class="btn btn-primary btn-xs">Accept all</button></div>'
+        + '</div></div>')
+
+      + section('9. Announcement bar with CTA',
+        '<div class="card overflow-hidden" style="background:linear-gradient(90deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff"><div class="p-3 flex items-center justify-center gap-3 text-sm">'
+        + I('sparkles-2') + '<span><strong>VGF26 v1.2 is here!</strong> · 14 new components and 6 fresh dashboards.</span><a href="#" class="underline font-semibold">View changelog →</a><button class="ml-3 opacity-75 hover:opacity-100">' + I_('x', 14) + '</button>'
+        + '</div></div>')
+
+      + section('10. Mobile bottom action bar',
+        '<div class="card overflow-hidden max-w-md"><div class="p-3 border-t border-[rgb(var(--line))] flex gap-2 items-center">'
+        + '<div class="flex-1"><div class="text-[10px] text-muted">Total</div><div class="font-bold text-lg">$142.50</div></div>'
+        + '<button class="btn btn-secondary">' + I('heart') + '</button>'
+        + '<button class="btn btn-primary flex-1 justify-center">Add to cart</button>'
+        + '</div></div>')
+
+      + section('11. Newsletter bar',
+        '<div class="card card-pad" style="background:linear-gradient(135deg,rgb(var(--iris)/.08),rgb(var(--fuchsia)/.08))">'
+        + '<div class="flex flex-wrap items-center gap-4">'
+        + '<div class="grid place-items-center w-12 h-12 rounded-xl shrink-0" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff">' + I('mail') + '</div>'
+        + '<div class="flex-1"><div class="font-semibold">Subscribe to product updates</div><div class="text-xs text-muted">One email per week. Release notes & new components.</div></div>'
+        + '<div class="flex gap-2 w-full sm:w-auto"><input class="input" placeholder="you@email.com" style="min-width:240px"><button class="btn btn-primary">Subscribe</button></div>'
+        + '</div></div>');
   }
 
   /* ────────────────────────────────────────────────────────────────

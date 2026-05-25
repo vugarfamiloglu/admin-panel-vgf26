@@ -122,8 +122,53 @@
     { label: 'AI Chat',           route: '#/specialty/chat',   hint: 'Specialty' },
   ];
 
+  /* ── Pexels stock photography ─────────────────────────────────── *
+   * Public-domain photos from pexels.com — direct CDN URLs, no API
+   * call required. Tinysrgb auto-compressed for fast loading. */
+  function pex(id, title, tag) {
+    return {
+      thumb: 'https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&w=600',
+      large: 'https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&w=1600',
+      title, tag,
+    };
+  }
+  const PEXELS = [
+    pex(1366919, 'Mountain peak at dawn',           'Nature'),
+    pex(189349,  'Tropical beach',                   'Travel'),
+    pex(2104882, 'City night skyline',               'Urban'),
+    pex(167699,  'Forest path',                      'Nature'),
+    pex(235621,  'Golden hour sunset',               'Landscape'),
+    pex(220769,  'Modern architecture',              'Urban'),
+    pex(1640777, 'Vibrant food',                     'Lifestyle'),
+    pex(302899,  'Espresso pour',                    'Lifestyle'),
+    pex(847402,  'Desert dunes',                     'Nature'),
+    pex(1933316, 'Aurora over fjord',                'Nature'),
+    pex(33109,   'Galaxy stars',                     'Abstract'),
+    pex(56866,   'Pink roses',                       'Nature'),
+    pex(271624,  'Modern living room',               'Interior'),
+    pex(3052361, 'Foggy skyline',                    'Urban'),
+    pex(1287145, 'Mountain road',                    'Travel'),
+    pex(733176,  'Northern lights',                  'Nature'),
+    pex(1430676, 'Tropical island',                  'Travel'),
+    pex(417173,  'Snowy mountains',                  'Nature'),
+    pex(210186,  'Lake reflection',                  'Landscape'),
+    pex(36717,   'Iceberg ocean',                    'Nature'),
+  ];
+
+  /* Curated property images for Airbnb-style cards. */
+  const PROPERTIES = [
+    pex(1571460, 'Iridescent loft',     'Baku, AZ'),
+    pex(106399,  'Aurora suite',        'Berlin, DE'),
+    pex(2079246, 'Spectrum apartment',  'Tokyo, JP'),
+    pex(1571460, 'Prism penthouse',     'Lisbon, PT'),
+    pex(323780,  'Glass villa',         'New York, US'),
+    pex(259962,  'Crystal cabin',       'Paris, FR'),
+    pex(245208,  'Neon studio',         'Seoul, KR'),
+    pex(2079249, 'Holo retreat',        'Sydney, AU'),
+  ];
+
   global.DEMO = {
     USERS, PRODUCTS, ORDERS, NOTIFICATIONS, ACTIVITIES, CHANNELS, CHAT, REV,
-    PALETTE_SUGGESTIONS, GRADS, avatarFor, avatar,
+    PALETTE_SUGGESTIONS, GRADS, PEXELS, PROPERTIES, avatarFor, avatar,
   };
 })(window);

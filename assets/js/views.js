@@ -722,28 +722,103 @@
    * PRICING (Commerce)
    * ───────────────────────────────────────────────────────────────── */
   function viewPricing() {
-    const head = pageHead('Pricing tables', 'Three-tier pricing with gradient highlight on the popular plan.',
-      [{title:'Commerce'}, {title:'Pricing'}]);
+    return pageHead('Pricing tables · 5 designs',
+        'Tiered featured · monthly/yearly toggle · dark enterprise · simple · detailed comparison.',
+        [{title:'Commerce'}, {title:'Pricing'}])
 
-    return head
-      + section('Tiered pricing',
+      /* ── Variant 1 — Tiered with featured plan ──────────────── */
+      + section('Tiered with featured plan',
         '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">'
         + ['Starter|$9|Free forever|Up to 5 projects|Community support|Single workspace',
            'Pro|$29|All Starter, plus|Unlimited projects|Priority support|Custom roles|Audit log',
            'Enterprise|$99|All Pro, plus|SSO + SCIM|24/7 SLA|DLP + Compliance|Dedicated CSM'].map((row,i) => {
           const [n,p,sub,...f] = row.split('|');
-          const featured = i===1;
+          const featured = i === 1;
           return '<div class="' + (featured ? 'gradient-border' : '') + '">'
-            + '<div class="card card-pad ' + (featured ? '' : 'hover-lift') + '">'
-            + '<div class="flex items-center justify-between"><h4 class="font-semibold">' + n + '</h4>'
-            + (featured ? '<span class="pill pill-iris">POPULAR</span>' : '') + '</div>'
-            + '<div style="font-family:DM Sans;font-weight:700;font-size:38px" class="mt-3">' + p + '<span class="text-sm text-muted font-normal">/mo</span></div>'
+            + '<div class="card card-pad ' + (featured ? '' : 'hover-lift') + '" style="min-height:100%">'
+            + '<div class="flex items-center justify-between"><h4 class="font-semibold text-lg">' + n + '</h4>'
+            + (featured ? '<span class="pill pill-iris">★ POPULAR</span>' : '') + '</div>'
+            + '<div style="font-family:DM Sans;font-weight:700;font-size:42px" class="mt-3">' + p + '<span class="text-sm text-muted font-normal">/mo</span></div>'
             + '<p class="text-xs text-muted mt-1">' + sub + '</p>'
             + '<ul class="mt-5 space-y-2">' + f.map(x => '<li class="flex items-center gap-2 text-sm">' + I_('check-circle', 16, 'text-emerald') + '<span>' + x + '</span></li>').join('') + '</ul>'
             + '<button class="btn ' + (featured ? 'btn-primary' : 'btn-secondary') + ' w-full justify-center mt-6">Choose ' + n + '</button>'
             + '</div></div>';
         }).join('')
-        + '</div>');
+        + '</div>')
+
+      /* ── Variant 2 — Billing toggle ─────────────────────────── */
+      + section('Monthly / yearly toggle (save 20%)',
+        '<div class="card card-pad" id="price-toggle-card">'
+        + '<div class="flex justify-center mb-6"><div class="price-toggle">'
+        + '<button class="is-on" onclick="this.classList.add(\'is-on\');this.nextElementSibling.classList.remove(\'is-on\');document.getElementById(\'price-toggle-card\').querySelectorAll(\'.price-month\').forEach(e=>e.style.display=\'\');document.getElementById(\'price-toggle-card\').querySelectorAll(\'.price-year\').forEach(e=>e.style.display=\'none\')">Monthly</button>'
+        + '<button onclick="this.classList.add(\'is-on\');this.previousElementSibling.classList.remove(\'is-on\');document.getElementById(\'price-toggle-card\').querySelectorAll(\'.price-month\').forEach(e=>e.style.display=\'none\');document.getElementById(\'price-toggle-card\').querySelectorAll(\'.price-year\').forEach(e=>e.style.display=\'\')">Yearly · save 20%</button>'
+        + '</div></div>'
+        + '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">'
+        + [['Hobby', 0, 0,'Forever free','5 projects','Community support'],
+           ['Studio', 19, 182,'Most popular','Unlimited projects','Priority email + chat'],
+           ['Team', 49, 470,'Per seat','Everything in Studio','SSO · audit · DLP']].map(([n, m, y, note, ...feats], i) => {
+            const featured = i === 1;
+            return '<div class="card card-pad hover-lift relative overflow-hidden ' + (featured ? 'ring-2 ring-[rgb(var(--iris))]' : '') + '">'
+              + (featured ? '<div class="absolute top-0 right-0 px-3 py-1 text-[10px] font-bold tracking-wider rounded-bl-xl" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff">RECOMMENDED</div>' : '')
+              + '<div class="text-xs uppercase tracking-wider text-muted font-semibold">' + n + '</div>'
+              + '<div class="price-month flex items-baseline gap-1 mt-2"><span style="font-family:DM Sans;font-weight:700;font-size:42px">$' + m + '</span><span class="text-muted text-sm">/ month</span></div>'
+              + '<div class="price-year flex items-baseline gap-1 mt-2" style="display:none"><span style="font-family:DM Sans;font-weight:700;font-size:42px">$' + y + '</span><span class="text-muted text-sm">/ year</span></div>'
+              + '<div class="text-xs text-muted">' + note + '</div>'
+              + '<ul class="mt-5 space-y-2">' + feats.map(x => '<li class="flex items-center gap-2 text-sm">' + I_('check', 14, 'text-emerald') + x + '</li>').join('') + '</ul>'
+              + '<button class="btn ' + (featured ? 'btn-primary' : 'btn-secondary') + ' w-full justify-center mt-5">' + (i === 0 ? 'Start free' : 'Start trial') + '</button>'
+              + '</div>';
+          }).join('')
+        + '</div></div>')
+
+      /* ── Variant 3 — Dark enterprise hero ───────────────────── */
+      + section('Dark enterprise hero',
+        '<div class="grid md:grid-cols-2 gap-4">'
+        + '<div class="card price-card-dark card-pad" style="padding:28px">'
+        + '<div class="relative"><span class="pill" style="background:rgba(255,255,255,.15);color:#fff;border:0">ENTERPRISE</span>'
+        + '<h3 style="font-family:DM Sans;font-size:32px;font-weight:700" class="mt-3">Custom for teams of 100+</h3>'
+        + '<div class="flex items-baseline gap-2 mt-4"><span style="font-family:DM Sans;font-size:46px;font-weight:700">Let\'s talk</span></div>'
+        + '<p class="opacity-80 text-sm mt-3 max-w-md">Tailored deployment, dedicated CSM, custom SLAs, on-prem options. Built for finance, healthcare, government.</p>'
+        + '<ul class="mt-5 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">' + ['Dedicated CSM','99.99% SLA','SSO + SCIM','SOC 2 · ISO 27001','Custom roles','24/7/365 support'].map(x => '<li class="flex items-center gap-2 opacity-90">' + I_('check', 14) + x + '</li>').join('') + '</ul>'
+        + '<div class="mt-6 flex gap-2"><button class="btn" style="background:#fff;color:rgb(var(--iris))">Talk to sales →</button><button class="btn" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)">Read whitepaper</button></div>'
+        + '</div></div>'
+
+        + '<div class="card card-pad" style="padding:28px"><div class="text-iris">' + I_('shield', 28) + '</div><h4 class="font-semibold text-lg mt-3">Compliance & security</h4>'
+        + '<ul class="mt-4 space-y-2 text-sm">' + ['SOC 2 Type II','ISO 27001','GDPR · CCPA','HIPAA-ready','Encrypted at rest + in transit','99.99% uptime SLA'].map(x => '<li class="flex items-center gap-2">' + I_('check-circle', 14, 'text-emerald') + x + '</li>').join('') + '</ul></div>'
+        + '</div>')
+
+      /* ── Variant 4 — Simple side-by-side ───────────────────── */
+      + section('Simple side-by-side',
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">'
+        + [['Individual','$12',['Personal use','5 GB storage','Email support']],['Business','$49',['Team workspace','100 GB storage','Live chat','Custom branding']]].map(([n, p, feats]) =>
+            '<div class="card card-pad text-center" style="padding:32px">'
+            + '<div class="text-xs uppercase tracking-wider text-muted font-bold">' + n + '</div>'
+            + '<div style="font-family:DM Sans;font-size:54px;font-weight:700" class="mt-2">' + p + '<span class="text-base text-muted font-normal">/mo</span></div>'
+            + '<button class="btn btn-primary w-full justify-center mt-4">Get ' + n + '</button>'
+            + '<div class="divider-h my-5"></div>'
+            + '<ul class="space-y-2 text-sm text-left">' + feats.map(x => '<li class="flex items-center gap-2">' + I_('check', 14, 'text-emerald') + x + '</li>').join('') + '</ul>'
+            + '</div>').join('')
+        + '</div>')
+
+      /* ── Variant 5 — Detailed comparison table ─────────────── */
+      + section('Detailed comparison table',
+        '<div class="card overflow-hidden"><div class="card-head"><h3>Compare every feature</h3></div>'
+        + '<table class="t-table">'
+        + '<thead><tr><th></th><th class="text-center">Starter</th><th class="text-center" style="background:rgb(var(--iris)/.06)">Pro · $29</th><th class="text-center">Enterprise</th></tr></thead>'
+        + '<tbody>' + [
+            ['Projects',         '5',          'Unlimited',  'Unlimited'],
+            ['Workspaces',       '1',          '5',          'Unlimited'],
+            ['Team members',     '3',          '25',         'Unlimited'],
+            ['Storage',          '5 GB',       '100 GB',     '1 TB'],
+            ['SSO + SCIM',       '—',          '—',          '✓'],
+            ['Audit log',        '—',          '✓',          '✓'],
+            ['Custom roles',     '—',          '✓',          '✓'],
+            ['DLP + Compliance', '—',          '—',          '✓'],
+            ['Priority support', '—',          '24/5',       '24/7 SLA'],
+            ['Onboarding',       'Self-serve', 'Group',      'Dedicated CSM'],
+          ].map(([k, ...v]) =>
+            '<tr><td><strong>' + k + '</strong></td>' + v.map((x, i) =>
+              '<td class="text-center" ' + (i === 1 ? 'style="background:rgb(var(--iris)/.04)"' : '') + '>' + (x === '✓' ? '<span class="text-emerald">' + I_('check', 16) + '</span>' : x === '—' ? '<span class="text-muted">—</span>' : x) + '</td>').join('') + '</tr>').join('')
+        + '</tbody></table></div>');
   }
 
   /* ─────────────────────────────────────────────────────────────────
