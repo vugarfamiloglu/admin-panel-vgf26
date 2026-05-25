@@ -421,6 +421,69 @@
     });
     /* Particles */
     root.querySelectorAll('[data-canvas="particles"]').forEach(particles);
+    /* Confetti */
+    root.querySelectorAll('[data-act="confetti"]').forEach((b) => {
+      b.addEventListener('click', () => confetti());
+    });
+    /* OTP auto-advance */
+    const otps = root.querySelectorAll('[data-otp]');
+    if (otps.length) {
+      otps.forEach((inp, i) => {
+        inp.addEventListener('input', () => {
+          if (inp.value && i < otps.length - 1) otps[i + 1].focus();
+        });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !inp.value && i > 0) otps[i - 1].focus();
+        });
+      });
+    }
+    /* Split-pane resizer */
+    root.querySelectorAll('[data-mount="split"]').forEach((box) => {
+      const a = box.querySelector('#split-a'), bar = box.querySelector('#split-bar');
+      if (!a || !bar) return;
+      let drag = false;
+      bar.addEventListener('mousedown', () => { drag = true; document.body.style.cursor = 'col-resize'; });
+      window.addEventListener('mouseup', () => { drag = false; document.body.style.cursor = ''; });
+      window.addEventListener('mousemove', (e) => {
+        if (!drag) return;
+        const rect = box.getBoundingClientRect();
+        const w = ((e.clientX - rect.left) / rect.width) * 100;
+        a.style.width = Math.max(15, Math.min(85, w)) + '%';
+      });
+    });
+  }
+
+  /* ── Confetti (vanilla canvas burst) ──────────────────────────── */
+  function confetti() {
+    const c = document.createElement('canvas');
+    c.style.cssText = 'position:fixed;inset:0;z-index:600;pointer-events:none';
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    document.body.appendChild(c);
+    const ctx = c.getContext('2d');
+    const colors = ['#7c3aed', '#d846ef', '#22d3ee', '#10b981', '#f59e0b', '#f43f5e'];
+    const parts = Array.from({length: 120}, () => ({
+      x: window.innerWidth / 2, y: window.innerHeight / 2,
+      vx: (Math.random() - .5) * 14, vy: -Math.random() * 16 - 4,
+      g: 0.45, w: 6 + Math.random() * 8, h: 3 + Math.random() * 6,
+      r: Math.random() * Math.PI, vr: (Math.random() - .5) * 0.3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 100 + Math.random() * 60,
+    }));
+    let t = 0;
+    function tick() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (const p of parts) {
+        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= 1;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / 100);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      t++;
+      if (t < 180) requestAnimationFrame(tick);
+      else c.remove();
+    }
+    tick();
   }
 
   global.Components = { mount: bindPage, toast, modal, confirmModal, openPalette };
