@@ -1711,11 +1711,11 @@
         + '</div>')
 
       + section('4 · Category tabs + accordion',
-        '<div class="card overflow-hidden" data-tab-set>'
-        + '<div class="border-b border-[rgb(var(--line))] flex gap-1 p-2">'
-        +    cats.map(([t,ic,c], k) => '<button data-tab="' + t.toLowerCase().split(' ')[0] + '" class="px-3 py-2 rounded-lg flex items-center gap-2 text-sm ' + (k === 0 ? 'is-active text-iris font-semibold' : 'text-muted') + '" style="' + (k === 0 ? 'background:rgb(var(--iris-soft))' : '') + '">' + I_(ic, 16) + t + '</button>').join('')
+        '<div class="card tab-set overflow-hidden" data-tab-set>'
+        + '<div class="border-b border-[rgb(var(--line))] flex gap-1 p-2 faq-cat-tabs">'
+        +    cats.map(([t, ic, c], k) => '<button data-tab="' + t.toLowerCase().split(' ')[0] + '" class="faq-cat-tab' + (k === 0 ? ' is-active' : '') + '">' + I_(ic, 16) + '<span>' + t + '</span></button>').join('')
         + '</div>'
-        +    cats.map(([t], k) => '<div data-tab-panel="' + t.toLowerCase().split(' ')[0] + '" class="' + (k === 0 ? 'is-active' : '') + '"><div class="divide-y divide-[rgb(var(--line-soft))]">' + qa.slice(0, 4).map(([q,a], i) => '<details ' + (i === 0 ? 'open' : '') + ' class="group"><summary class="p-4 cursor-pointer list-none flex justify-between items-center"><span class="font-semibold text-sm">' + q + '</span><span class="text-iris transition-transform group-open:rotate-180">' + I_('chevron-down', 16) + '</span></summary><div class="px-4 pb-4 text-sm text-muted">' + a + '</div></details>').join('') + '</div></div>').join('')
+        +    cats.map(([t, ic, c], k) => '<div data-tab-panel="' + t.toLowerCase().split(' ')[0] + '" class="' + (k === 0 ? 'is-active' : '') + '"><div class="divide-y divide-[rgb(var(--line-soft))]">' + qa.slice(0, 4).map(([q, a], i) => '<details ' + (i === 0 && k === 0 ? 'open' : '') + ' class="group"><summary class="p-4 cursor-pointer list-none flex justify-between items-center"><span class="font-semibold text-sm">' + q + '</span><span class="text-iris transition-transform group-open:rotate-180">' + I_('chevron-down', 16) + '</span></summary><div class="px-4 pb-4 text-sm text-muted">' + a + ' <span class="text-iris">(' + t + ')</span></div></details>').join('') + '</div></div>').join('')
         + '</div>')
 
       + section('5 · Card grid (FAQ tiles)',

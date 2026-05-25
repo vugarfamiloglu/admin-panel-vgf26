@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64" role="img" aria-label="VGF26 — Iridescent Admin Studio">
+  <defs>
+    <linearGradient id="lg-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#1a063d"/>
+      <stop offset="100%" stop-color="#5618b5"/>
+    </linearGradient>
+    <linearGradient id="lg-iris" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="lg-ultra" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+    <linearGradient id="lg-fuchsia" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#f0abfc"/>
+      <stop offset="100%" stop-color="#d846ef"/>
+    </linearGradient>
+    <linearGradient id="lg-cyan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#67e8f9"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="lg-text" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7c3aed"/>
+      <stop offset="50%"  stop-color="#d846ef"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <!-- mark — same iridescent diamond as the favicon -->
+  <g>
+    <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#lg-bg)"/>
+    <g transform="translate(32 32)">
+      <path d="M0,-20 L-18,-6 L0,0 Z" fill="url(#lg-iris)"/>
+      <path d="M0,-20 L18,-6 L0,0 Z"  fill="url(#lg-ultra)"/>
+      <path d="M-18,-6 L0,0 L0,20 Z"  fill="url(#lg-cyan)"/>
+      <path d="M18,-6 L0,0 L0,20 Z"   fill="url(#lg-fuchsia)"/>
+      <path d="M0,-20 L-18,-6" stroke="rgba(255,255,255,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <circle cx="-7" cy="-12" r="1.6" fill="rgba(255,255,255,0.85)"/>
+    </g>
+  </g>
+  <!-- wordmark -->
+  <g transform="translate(82 0)">
+    <text x="0" y="36" font-family="DM Sans, Inter, system-ui, sans-serif" font-weight="700" font-size="26" fill="url(#lg-text)" letter-spacing="-0.5">VGF26</text>
+    <text x="1" y="54" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="10" fill="#9ca3af" letter-spacing="3.6">IRIDESCENT STUDIO</text>
+  </g>
+</svg>

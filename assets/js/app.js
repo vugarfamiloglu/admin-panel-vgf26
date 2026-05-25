@@ -9,6 +9,38 @@
   const $ = (sel, root) => (root || document).querySelector(sel);
   const I = (n, opts) => Icons.get(n, opts || {});
 
+  /* ── VGF26 brand mark — the iridescent faceted diamond. Same artwork as
+   * favicon.svg / logo.svg, inlined so it inherits theme colours and renders
+   * crisp at any size. Each instance gets a unique gradient-id so multiple
+   * marks on one page never share defs. */
+  let _markUid = 0;
+  function vgfBrandMark(size) {
+    const s = size || 36;
+    const u = 'm' + (++_markUid);
+    return ''
+      + '<svg width="' + s + '" height="' + s + '" viewBox="0 0 64 64" aria-hidden="true">'
+      + '<defs>'
+      +   '<linearGradient id="' + u + 'bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a063d"/><stop offset="100%" stop-color="#5618b5"/></linearGradient>'
+      +   '<linearGradient id="' + u + 'i" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>'
+      +   '<linearGradient id="' + u + 'u" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#9333ea"/></linearGradient>'
+      +   '<linearGradient id="' + u + 'f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0abfc"/><stop offset="100%" stop-color="#d846ef"/></linearGradient>'
+      +   '<linearGradient id="' + u + 'c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67e8f9"/><stop offset="100%" stop-color="#0891b2"/></linearGradient>'
+      + '</defs>'
+      + '<rect width="64" height="64" rx="14" fill="url(#' + u + 'bg)"/>'
+      + '<g transform="translate(32 32)">'
+      +   '<path d="M0,-20 L-18,-6 L0,0 Z" fill="url(#' + u + 'i)"/>'
+      +   '<path d="M0,-20 L18,-6 L0,0 Z"  fill="url(#' + u + 'u)"/>'
+      +   '<path d="M-18,-6 L0,0 L0,20 Z"  fill="url(#' + u + 'c)"/>'
+      +   '<path d="M18,-6 L0,0 L0,20 Z"   fill="url(#' + u + 'f)"/>'
+      +   '<path d="M0,-20 L-18,-6" stroke="rgba(255,255,255,0.45)" stroke-width="1" fill="none" stroke-linecap="round"/>'
+      +   '<circle cx="-7" cy="-12" r="1.6" fill="rgba(255,255,255,0.85)"/>'
+      + '</g>'
+      + '</svg>';
+  }
+  /* Expose for views/components that want to render the brand mark. */
+  window.VGF = window.VGF || {};
+  window.VGF.brandMark = vgfBrandMark;
+
   /* ── Theme manager ─────────────────────────────────────────────── */
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
@@ -50,7 +82,7 @@
     const activeId = findActiveItemId(route);
     sb.innerHTML =
       '<div class="sb-brand">'
-      + '  <a href="#/" class="grid place-items-center w-9 h-9 rounded-xl shrink-0" style="background:linear-gradient(135deg,#7c3aed,#d846ef,#22d3ee);background-size:200% 200%;animation:aurora-pan 8s ease-in-out infinite;color:#fff">' + I('sparkles', { size: 18 }) + '</a>'
+      + '  <a href="#/" class="vgf-mark" aria-label="VGF26 home">' + vgfBrandMark(36) + '</a>'
       + '  <div class="sb-brand-name">'
       + '    <div>VGF26</div>'
       + '    <div class="sb-brand-sub">' + I18n.t('app.tagline') + '</div>'

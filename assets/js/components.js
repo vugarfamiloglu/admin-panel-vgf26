@@ -574,12 +574,73 @@
     svg.setAttribute('height', '100%');
     host.insertBefore(svg, canvas);
 
-    const nodes = []; /* { dom, data, side, level, parent, x, y, w, h } */
+    const nodes = []; /* { dom, data, side, level, parent, x, y, w, h, offX, offY } */
     const ROW_GAP   = 14;   /* vertical breathing room between any two rows */
     const COL_GAP   = 56;   /* gap between depth columns */
     const PAD_X     = 32;
+    const DRAG_THRESHOLD = 4; /* px of movement before drag mode kicks in */
 
     function side(i) { return i % 2 === 0 ? 'right' : 'left'; }
+
+    function toggle(obj) {
+      if (!obj.data.children || !obj.data.children.length) return;
+      const el = obj.dom;
+      const collapsed = el.dataset.collapsed === '1';
+      el.dataset.collapsed = collapsed ? '0' : '1';
+      el.classList.toggle('mm-collapsed', !collapsed);
+      /* Wipe any user-applied offset on collapse/expand so the tree retidies. */
+      nodes.forEach((n) => { n.offX = 0; n.offY = 0; });
+      layout();
+    }
+
+    function bindDragAndClick(obj) {
+      const el = obj.dom;
+      let startX = 0, startY = 0, originX = 0, originY = 0;
+      let pressed = false, dragging = false;
+
+      function onDown(e) {
+        if (e.button !== undefined && e.button !== 0) return; /* left button only */
+        pressed = true; dragging = false;
+        const p = e.touches ? e.touches[0] : e;
+        startX = p.clientX; startY = p.clientY;
+        originX = obj.offX || 0; originY = obj.offY || 0;
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend',  onUp);
+      }
+      function onMove(e) {
+        if (!pressed) return;
+        const p = e.touches ? e.touches[0] : e;
+        const dx = p.clientX - startX, dy = p.clientY - startY;
+        if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        if (!dragging) { dragging = true; el.classList.add('is-dragging'); document.body.style.cursor = 'grabbing'; }
+        if (e.cancelable) e.preventDefault();
+        obj.offX = originX + dx;
+        obj.offY = originY + dy;
+        applyPosition();
+        redrawConnectors();
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend',  onUp);
+        if (dragging) {
+          el.classList.remove('is-dragging');
+          document.body.style.cursor = '';
+        } else if (pressed) {
+          /* Treat as a click — toggle collapse if this node has children. */
+          toggle(obj);
+        }
+        pressed = false; dragging = false;
+      }
+
+      el.addEventListener('mousedown',  onDown);
+      el.addEventListener('touchstart', onDown, { passive: true });
+      /* Swallow native click so we don't double-fire (mousedown handles toggle). */
+      el.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); });
+    }
 
     function createNode(data, level, parent, sideOf) {
       const el = document.createElement('div');
@@ -587,23 +648,26 @@
       if (level === 0) el.classList.add('mm-root');
       if (level === 1) el.classList.add('mm-l1');
       if (data.color) el.setAttribute('data-color', data.color);
+      const hasKids = !!(data.children && data.children.length);
       el.innerHTML = '<span>' + data.label + '</span>'
-        + (data.children && data.children.length ? '<span class="mm-toggle">−</span>' : '');
+        + (hasKids ? '<span class="mm-toggle">−</span>' : '');
       el.dataset.collapsed = '0';
+      el.style.cursor = 'grab';
       canvas.appendChild(el);
-      const obj = { dom: el, data, level, parent, side: sideOf, children: [] };
+      const obj = { dom: el, data, level, parent, side: sideOf, children: [], offX: 0, offY: 0 };
       if (parent) parent.children.push(obj);
       nodes.push(obj);
       if (data.children) data.children.forEach((c, i) => createNode(c, level + 1, obj, level === 0 ? side(i) : sideOf));
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!data.children || !data.children.length) return;
-        const collapsed = el.dataset.collapsed === '1';
-        el.dataset.collapsed = collapsed ? '0' : '1';
-        el.classList.toggle('mm-collapsed', !collapsed);
-        layout();
-      });
+      bindDragAndClick(obj);
       return obj;
+    }
+
+    function applyPosition() {
+      nodes.forEach((n) => {
+        if (n.dom.style.display === 'none') return;
+        n.dom.style.left = (n.x + (n.offX || 0)) + 'px';
+        n.dom.style.top  = ((n.y + PAD_X) + (n.offY || 0)) + 'px';
+      });
     }
 
     function isVisible(n) {
@@ -646,6 +710,34 @@
       return cursor; /* total height of this side */
     }
 
+    function redrawConnectors() {
+      const w = parseFloat(canvas.style.width)  || host.clientWidth;
+      const h = parseFloat(canvas.style.height) || host.clientHeight;
+      svg.setAttribute('width', w);
+      svg.setAttribute('height', h);
+      svg.innerHTML = '<defs><linearGradient id="mm-conn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#d846ef" stop-opacity=".55"/></linearGradient></defs>';
+      nodes.forEach((n) => {
+        if (!n.parent || !isVisible(n)) return;
+        const pw = n.parent.dom.offsetWidth, ph = n.parent.dom.offsetHeight;
+        const cw = n.dom.offsetWidth,         ch = n.dom.offsetHeight;
+        const px = n.parent.x + (n.parent.offX || 0);
+        const py = parseFloat(n.parent.dom.style.top) + ph / 2;
+        const nx = n.x + (n.offX || 0);
+        const cy = parseFloat(n.dom.style.top)        + ch / 2;
+        let x1, x2;
+        if (n.side === 'right') { x1 = px + pw; x2 = nx; }
+        else                    { x1 = px;      x2 = nx + cw; }
+        const mx = (x1 + x2) / 2;
+        const path = 'M' + x1 + ' ' + py + ' C ' + mx + ' ' + py + ', ' + mx + ' ' + cy + ', ' + x2 + ' ' + cy;
+        const p = document.createElementNS(svgNS, 'path');
+        p.setAttribute('d', path);
+        p.setAttribute('stroke', 'url(#mm-conn)');
+        p.setAttribute('stroke-width', n.level === 1 ? '2.5' : '1.5');
+        p.setAttribute('fill', 'none');
+        svg.appendChild(p);
+      });
+    }
+
     function layout() {
       const root = nodes[0];
       const rightKids = root.children.filter((k) => k.side === 'right');
@@ -679,20 +771,12 @@
       /* Root sits centred vertically. */
       root.x = cx - rootW / 2;
       root.y = (totalH - rootH) / 2 + PAD_X;
-      root.dom.style.left = root.x + 'px';
-      root.dom.style.top  = root.y + 'px';
 
       /* Place children — x by column, y already computed. */
       function place(n, parentX, parentW, dir) {
         const w = n.dom.offsetWidth || 160;
-        const colW = cols[n.level] || w;
-        if (dir === 'right') {
-          n.x = parentX + parentW + COL_GAP;
-        } else {
-          n.x = parentX - COL_GAP - w;
-        }
-        n.dom.style.left = n.x + 'px';
-        n.dom.style.top  = (n.y + PAD_X) + 'px';
+        if (dir === 'right') { n.x = parentX + parentW + COL_GAP; }
+        else                 { n.x = parentX - COL_GAP - w; }
         if (n.dom.dataset.collapsed === '1') return;
         n.children.forEach((c) => place(c, n.x, w, dir));
       }
@@ -702,45 +786,28 @@
       /* Visibility — collapse hidden subtree. */
       nodes.forEach((n) => { n.dom.style.display = isVisible(n) ? '' : 'none'; });
 
-      /* Sizing the canvas. */
-      const maxR = Math.max(...nodes.filter(isVisible).map((n) => (n.x || 0) + (n.dom.offsetWidth || 160)));
-      const maxB = Math.max(...nodes.filter(isVisible).map((n) => parseFloat(n.dom.style.top) + (n.dom.offsetHeight || 38)));
-      const minL = Math.min(...nodes.filter(isVisible).map((n) => n.x || 0));
+      /* Apply x/y to DOM (root then everyone else). */
+      root.dom.style.left = root.x + 'px';
+      root.dom.style.top  = root.y + 'px';
+      applyPosition();
+
+      /* Sizing the canvas — account for both base x and user drag offset. */
+      const vis = nodes.filter(isVisible);
+      const maxR = Math.max.apply(null, vis.map((n) => (n.x || 0) + (n.offX || 0) + (n.dom.offsetWidth || 160)));
+      const maxB = Math.max.apply(null, vis.map((n) => parseFloat(n.dom.style.top) + (n.dom.offsetHeight || 38)));
+      const minL = Math.min.apply(null, vis.map((n) => (n.x || 0) + (n.offX || 0)));
       const shiftL = minL < PAD_X ? PAD_X - minL : 0;
       if (shiftL) {
-        nodes.forEach((n) => {
-          if (n.dom.style.display === 'none') return;
-          n.x += shiftL;
-          n.dom.style.left = n.x + 'px';
-        });
+        nodes.forEach((n) => { n.x += shiftL; });
+        root.dom.style.left = root.x + 'px';
+        applyPosition();
       }
       const width = Math.max(host.clientWidth, maxR + shiftL + PAD_X);
       canvas.style.width  = width + 'px';
       canvas.style.height = (maxB + PAD_X) + 'px';
       host.style.minHeight = Math.max(540, maxB + PAD_X * 2) + 'px';
 
-      /* Draw connectors. */
-      svg.setAttribute('width', width);
-      svg.setAttribute('height', maxB + PAD_X);
-      svg.innerHTML = '<defs><linearGradient id="mm-conn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#d846ef" stop-opacity=".55"/></linearGradient></defs>';
-      nodes.forEach((n) => {
-        if (!n.parent || !isVisible(n)) return;
-        const pw = n.parent.dom.offsetWidth, ph = n.parent.dom.offsetHeight;
-        const cw = n.dom.offsetWidth,         ch = n.dom.offsetHeight;
-        const py = parseFloat(n.parent.dom.style.top) + ph / 2;
-        const cy = parseFloat(n.dom.style.top)        + ch / 2;
-        let x1, x2;
-        if (n.side === 'right') { x1 = n.parent.x + pw; x2 = n.x; }
-        else                    { x1 = n.parent.x;     x2 = n.x + cw; }
-        const mx = (x1 + x2) / 2;
-        const path = 'M' + x1 + ' ' + py + ' C ' + mx + ' ' + py + ', ' + mx + ' ' + cy + ', ' + x2 + ' ' + cy;
-        const p = document.createElementNS(svgNS, 'path');
-        p.setAttribute('d', path);
-        p.setAttribute('stroke', 'url(#mm-conn)');
-        p.setAttribute('stroke-width', n.level === 1 ? '2.5' : '1.5');
-        p.setAttribute('fill', 'none');
-        svg.appendChild(p);
-      });
+      redrawConnectors();
     }
 
     createNode(root, 0, null, 'right');

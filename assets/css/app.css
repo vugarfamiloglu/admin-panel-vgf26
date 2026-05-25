@@ -560,7 +560,7 @@ html[data-theme="dark"] .glass-card { border-color: rgb(255 255 255 / .08); }
   padding: 10px 14px;
   border-radius: 12px;
   font-size: 13px; font-weight: 600;
-  cursor: pointer; user-select: none;
+  cursor: grab; user-select: none; touch-action: none;
   background: rgb(var(--bg-card));
   border: 1.5px solid rgb(var(--line));
   box-shadow: var(--shadow-sm);
@@ -569,6 +569,13 @@ html[data-theme="dark"] .glass-card { border-color: rgb(255 255 255 / .08); }
   z-index: 2;
 }
 .mm-node:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgb(var(--iris)); }
+.mm-node.is-dragging {
+  cursor: grabbing !important;
+  transform: scale(1.04);
+  box-shadow: 0 12px 32px rgb(124 58 237 / .35);
+  z-index: 50;
+  transition: none;
+}
 .mm-node.mm-root {
   background: linear-gradient(135deg, rgb(var(--iris)), rgb(var(--fuchsia)));
   color: #fff; border-color: transparent;
@@ -754,7 +761,32 @@ html[data-theme="dark"] .gh-l0 { background: rgb(255 255 255 / .06); }
 .carousel-dots button.is-on { width: 24px; background: #fff; }
 
 /* ── Tabs (clickable, content swaps) ──────────────────────────── */
-.tab-set [data-tab-panel]:not(.is-active) { display: none; }
+.tab-set [data-tab-panel]:not(.is-active),
+[data-tab-set] [data-tab-panel]:not(.is-active) { display: none; }
+
+/* FAQ category tabs (icon + label, soft pill on active) */
+.faq-cat-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600;
+  color: rgb(var(--muted)); border-radius: 10px; cursor: pointer;
+  background: transparent; transition: background .15s ease, color .15s ease;
+}
+.faq-cat-tab:hover { background: rgb(var(--bg-soft)); color: rgb(var(--ink)); }
+.faq-cat-tab.is-active {
+  color: rgb(var(--iris));
+  background: rgb(var(--iris-soft));
+  box-shadow: inset 0 0 0 1px rgb(var(--iris) / .25);
+}
+
+/* VGF26 brand mark — sidebar logo (matches favicon.svg) */
+.vgf-mark {
+  display: inline-grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 11px;
+  flex-shrink: 0; line-height: 0;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.vgf-mark:hover { transform: translateY(-1px) rotate(-2deg); box-shadow: 0 6px 18px rgb(124 58 237 / .35); }
+.vgf-mark svg { display: block; border-radius: 11px; }
 .tab-underline button { position: relative; padding: 10px 18px; font-size: 13px; font-weight: 600; color: rgb(var(--muted)); cursor: pointer; }
 .tab-underline button.is-active { color: rgb(var(--iris)); }
 .tab-underline button.is-active::after {
