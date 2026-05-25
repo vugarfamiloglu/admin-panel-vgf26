@@ -26,10 +26,28 @@
     } catch (_) {}
   });
 
+  /* ── Helper: pick the SINGLE best-matching nav item for the route.
+   * Avoids the bug where two items with the same / prefix-overlapping
+   * routes both get highlighted simultaneously. */
+  function findActiveItemId(route) {
+    let exactId = null, bestPrefixId = null, bestPrefixLen = -1;
+    for (const sec of (NAV || [])) {
+      for (const it of sec.items) {
+        if (!it.route) continue;
+        if (it.route === route && !exactId) { exactId = it.id; }
+        else if (it.route !== '#/' && route.startsWith(it.route + '/') && it.route.length > bestPrefixLen) {
+          bestPrefixId = it.id; bestPrefixLen = it.route.length;
+        }
+      }
+    }
+    return exactId || bestPrefixId;
+  }
+
   /* ── Sidebar ───────────────────────────────────────────────────── */
   function renderSidebar() {
     const sb = $('#sidebar');
     const route = location.hash || '#/';
+    const activeId = findActiveItemId(route);
     sb.innerHTML =
       '<div class="sb-brand">'
       + '  <a href="#/" class="grid place-items-center w-9 h-9 rounded-xl shrink-0" style="background:linear-gradient(135deg,#7c3aed,#d846ef,#22d3ee);background-size:200% 200%;animation:aurora-pan 8s ease-in-out infinite;color:#fff">' + I('sparkles', { size: 18 }) + '</a>'
@@ -48,7 +66,7 @@
 
       + '<nav class="sb-scroll">' + (NAV || []).map((section) => {
         const items = section.items.map((it) => {
-          const active = (it.route === route) || (it.route !== '#/' && route.startsWith(it.route));
+          const active = it.id === activeId;
           return ''
             + '<a href="' + (it.route || '#') + '" class="sb-link ' + (active ? 'is-active' : '') + '" data-id="' + it.id + '" data-search="' + it.title.toLowerCase() + '">'
             + '  ' + I(it.icon || 'circle', { size: 17 })
@@ -249,11 +267,10 @@
     const root = $('#view');
     root.innerHTML = view;
     Components.mount(root);
-    /* Highlight active sidebar item */
+    /* Highlight active sidebar item — same single-winner logic. */
+    const activeId = findActiveItemId(route);
     $('#sidebar')?.querySelectorAll('.sb-link').forEach((a) => {
-      const r = a.getAttribute('href');
-      const active = r === route || (r !== '#/' && route.startsWith(r));
-      a.classList.toggle('is-active', active);
+      a.classList.toggle('is-active', a.dataset.id === activeId);
     });
     /* Scroll to top */
     window.scrollTo({ top: 0 });

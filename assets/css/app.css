@@ -424,9 +424,13 @@ html[data-theme="dark"] .glass-card { border-color: rgb(255 255 255 / .08); }
 .glow-on-hover:hover { box-shadow: var(--shadow-glow); }
 
 /* ── Marquee ───────────────────────────────────────────────────── */
-.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.marquee-track { display: inline-flex; gap: 28px; animation: marquee 22s linear infinite; }
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); --marquee-speed: 22s; }
+.marquee-track { display: inline-flex; gap: 28px; white-space: nowrap; animation: marquee var(--marquee-speed) linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
 @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes marquee-y { from { transform: translateY(0) } to { transform: translateY(-50%) } }
+@keyframes aurora-pan { 0%,100% { background-position: 0% 50% } 50% { background-position: 100% 50% } }
+@keyframes ping-slow { 0% { transform: scale(.95); opacity: .75 } 70% { transform: scale(1.4); opacity: 0 } 100% { transform: scale(1.4); opacity: 0 } }
 
 /* ── Misc one-offs ─────────────────────────────────────────────── */
 .dot-loader { display: inline-flex; gap: 4px; }
@@ -769,17 +773,21 @@ html[data-theme="dark"] .gh-l0 { background: rgb(255 255 255 / .06); }
 }
 
 /* ── Mega menu ────────────────────────────────────────────────── */
-.mega-host { position: relative; }
+.mega-host { position: relative; z-index: 60; }
+.mega-host > .mega-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .mega-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .mega-trigger.is-open { background: rgb(var(--iris-soft)); color: rgb(var(--iris)); }
 .mega-panel {
-  position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px;
+  position: absolute; left: 0; right: auto; top: 100%; margin-top: 8px;
   background: rgb(var(--bg-card)); border: 1px solid rgb(var(--line));
   border-radius: 16px; box-shadow: var(--shadow-lg);
-  padding: 22px; z-index: 30; min-width: 720px;
+  padding: 22px; z-index: 80; min-width: 720px; max-width: 92vw;
   animation: dd-in .14s cubic-bezier(.2,.7,.3,1) both;
 }
 .mega-panel.is-hidden { display: none; }
+/* When the mega menu is embedded in a page card, we don't want the card
+ * to clip its drop-out — force overflow visible on the immediate wrapper. */
+.mega-wrapper { overflow: visible !important; position: relative; z-index: 50; }
 
 /* ── Image compare slider ─────────────────────────────────────── */
 .compare {

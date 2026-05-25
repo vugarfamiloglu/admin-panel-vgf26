@@ -400,7 +400,8 @@
    * TABLES
    * ───────────────────────────────────────────────────────────────── */
   function viewTables() {
-    const head = pageHead('Tables · 8 variants', 'Sortable, sticky, expandable, comparison — production-grade table patterns.',
+    const head = pageHead('Tables · 8 variants',
+      'Data · sortable · sticky · expandable · comparison · responsive · dense · with-charts.',
       [{title:'Data', route:'#/tables'}, {title:'Tables'}]);
 
     const rows = D().PRODUCTS.map(p =>
@@ -414,45 +415,83 @@
       + '<td class="text-right"><button class="btn btn-ghost btn-xs">' + I_('more-horizontal', 14) + '</button></td></tr>'
     ).join('');
 
+    /* 1 — Data table with filter + export + pagination */
     const dataTable =
       '<div class="card overflow-hidden">'
-      + '<div class="card-head">'
-      + '  <h3>Inventory</h3>'
-      + '  <div class="flex items-center gap-2"><input class="input" style="height:32px;width:200px" placeholder="Filter…">'
-      + '    <button class="btn btn-secondary btn-xs">' + I_('filter', 14) + 'Filter</button>'
-      + '    <button class="btn btn-primary btn-xs">' + I_('download', 14) + 'Export</button>'
-      + '  </div>'
-      + '</div>'
-      + '<div style="max-height:420px;overflow:auto">'
-      + '<table class="t-table">'
-      + '  <thead><tr><th>ID</th><th>Product</th><th>SKU</th><th>Category</th><th class="text-right">Price</th><th class="text-right">Stock</th><th class="text-right">Sales</th><th></th></tr></thead>'
-      + '  <tbody>' + rows + '</tbody>'
-      + '</table>'
-      + '</div>'
-      + '<div class="p-3 flex justify-between items-center border-t border-[rgb(var(--line))]">'
-      + '  <span class="text-xs text-muted">Showing 1–8 of 248</span>'
-      + '  <div class="flex gap-1">'
-      + '    <button class="btn btn-secondary btn-xs">' + I_('chevron-left',14) + '</button>'
-      + '    <button class="btn btn-primary btn-xs">1</button>'
-      + '    <button class="btn btn-secondary btn-xs">2</button>'
-      + '    <button class="btn btn-secondary btn-xs">3</button>'
-      + '    <button class="btn btn-secondary btn-xs">' + I_('chevron-right',14) + '</button>'
-      + '  </div>'
-      + '</div>'
+      + '<div class="card-head"><h3>Inventory</h3><div class="flex items-center gap-2"><input class="input" style="height:32px;width:200px" placeholder="Filter…"><button class="btn btn-secondary btn-xs">' + I_('filter', 14) + 'Filter</button><button class="btn btn-primary btn-xs">' + I_('download', 14) + 'Export</button></div></div>'
+      + '<div style="max-height:420px;overflow:auto"><table class="t-table"><thead><tr><th>ID</th><th>Product</th><th>SKU</th><th>Category</th><th class="text-right">Price</th><th class="text-right">Stock</th><th class="text-right">Sales</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      + '<div class="p-3 flex justify-between items-center border-t border-[rgb(var(--line))]"><span class="text-xs text-muted">Showing 1–8 of 248</span><div class="flex gap-1"><button class="btn btn-secondary btn-xs">' + I_('chevron-left',14) + '</button><button class="btn btn-primary btn-xs">1</button><button class="btn btn-secondary btn-xs">2</button><button class="btn btn-secondary btn-xs">3</button><button class="btn btn-secondary btn-xs">' + I_('chevron-right',14) + '</button></div></div>'
       + '</div>';
 
+    /* 2 — Sortable table (visual sort indicators) */
+    const sortable =
+      '<div class="card overflow-hidden"><table class="t-table">'
+      + '<thead><tr>' + ['Customer ↓','Plan','MRR','Joined','Status'].map((h, i) => '<th><div class="flex items-center gap-1 cursor-pointer hover:text-iris">' + h.replace(' ↓', '') + (i === 0 ? '<span class="text-iris">↓</span>' : i === 2 ? '<span class="text-muted">↕</span>' : '') + '</div></th>').join('') + '</tr></thead>'
+      + '<tbody>'
+      + D().USERS.slice(0, 5).map((u, i) => '<tr><td><div class="flex items-center gap-2">' + D().avatarFor(u.name) + u.name + '</div></td><td><span class="pill pill-' + ['iris','emerald','amber','cyan','fuchsia'][i] + '">' + ['Enterprise','Pro','Starter','Pro','Pro'][i] + '</span></td><td class="text-right font-mono">$' + ((i + 1) * 290).toLocaleString() + '</td><td class="text-muted">' + u.joined + '</td><td><span class="pill pill-' + (u.status === 'online' ? 'emerald' : u.status === 'busy' ? 'amber' : 'muted') + '">' + u.status + '</span></td></tr>').join('')
+      + '</tbody></table></div>';
+
+    /* 3 — Sticky header table */
+    const sticky =
+      '<div class="card overflow-hidden"><div class="card-head"><h3>Sticky header (scroll inside)</h3></div>'
+      + '<div style="max-height:280px;overflow-y:auto"><table class="t-table"><thead><tr><th>#</th><th>Item</th><th class="text-right">Stock</th><th class="text-right">Sales</th></tr></thead><tbody>'
+      + Array.from({length: 25}, (_, i) => '<tr><td>' + (i+1) + '</td><td>Item ' + (i+1) + '</td><td class="text-right">' + (100 + i * 42) + '</td><td class="text-right">' + (50 + i * 15) + '</td></tr>').join('')
+      + '</tbody></table></div></div>';
+
+    /* 4 — Expandable rows */
+    const expandable =
+      '<div class="card overflow-hidden"><table class="t-table"><thead><tr><th></th><th>Order</th><th>Customer</th><th class="text-right">Amount</th><th>Status</th></tr></thead><tbody>'
+      + D().ORDERS.map((o, i) => ''
+          + '<tr><td><details ' + (i === 0 ? 'open' : '') + ' class="group"><summary class="list-none cursor-pointer text-iris">' + I_('chevron-right', 14) + '</summary></details></td>'
+          + '<td><strong>' + o.id + '</strong></td><td>' + o.cust + '</td><td class="text-right font-mono">$' + o.amount.toFixed(2) + '</td><td><span class="pill pill-' + (o.status === 'completed' ? 'emerald' : o.status === 'pending' ? 'amber' : o.status === 'failed' ? 'rose' : 'iris') + '">' + o.status + '</span></td></tr>'
+          + (i === 0 ? '<tr><td colspan="5" class="!p-0"><div class="bg-soft p-4 border-l-4" style="border-color:rgb(var(--iris))"><div class="grid grid-cols-3 gap-3 text-sm"><div><div class="label">Items</div><div>2 × Iridescent Tee · 1 × Hoodie</div></div><div><div class="label">Shipping</div><div>UPS · 1Z9999W99999999999</div></div><div><div class="label">Tracking</div><a href="#" class="text-iris">View →</a></div></div></div></td></tr>' : '')
+        ).join('')
+      + '</tbody></table></div>';
+
+    /* 5 — Plan comparison */
     const compare =
       '<div class="card overflow-hidden"><div class="card-head"><h3>Plan comparison</h3></div>'
       + '<table class="t-table">'
       + '<thead><tr><th></th><th class="text-center">Starter</th><th class="text-center" style="background:rgb(var(--iris)/.06)">Pro</th><th class="text-center">Enterprise</th></tr></thead>'
       + '<tbody>'
       + [['Projects','5','Unlimited','Unlimited'],['Workspaces','1','5','Unlimited'],['SSO','—','—','✓'],['Audit log','—','✓','✓'],['Custom roles','—','✓','✓'],['Priority support','—','24/5','24/7 SLA']].map(([k,...v]) =>
-          '<tr><td><strong>' + k + '</strong></td>' + v.map((x,i) => '<td class="text-center ' + (i===1 ? '' : '') + '" ' + (i===1 ? 'style="background:rgb(var(--iris)/.04)"' : '') + '>' + (x === '✓' ? '<span class="text-emerald">' + I_('check', 16) + '</span>' : x === '—' ? '<span class="text-muted">—</span>' : x) + '</td>').join('') + '</tr>').join('')
+          '<tr><td><strong>' + k + '</strong></td>' + v.map((x,i) => '<td class="text-center" ' + (i===1 ? 'style="background:rgb(var(--iris)/.04)"' : '') + '>' + (x === '✓' ? '<span class="text-emerald">' + I_('check', 16) + '</span>' : x === '—' ? '<span class="text-muted">—</span>' : x) + '</td>').join('') + '</tr>').join('')
+      + '</tbody></table></div>';
+
+    /* 6 — Responsive (stacks on mobile, card list) */
+    const responsive =
+      '<div class="card overflow-hidden"><div class="card-head"><h3>Responsive card list (mobile-friendly)</h3></div><div class="divide-y divide-[rgb(var(--line-soft))]">'
+      + D().USERS.slice(0, 5).map((u) => '<div class="p-4 flex items-center gap-4 flex-wrap"><div class="flex items-center gap-3 flex-1 min-w-0">' + D().avatarFor(u.name) + '<div class="min-w-0"><div class="font-semibold truncate">' + u.name + '</div><div class="text-xs text-muted truncate">' + u.email + '</div></div></div><div class="text-sm text-muted">' + u.role + '</div><div><span class="pill pill-' + (u.status === 'online' ? 'emerald' : u.status === 'busy' ? 'rose' : 'muted') + '">' + u.status + '</span></div><button class="btn btn-ghost btn-xs">' + I_('more-horizontal', 14) + '</button></div>').join('')
+      + '</div></div>';
+
+    /* 7 — Dense / striped table */
+    const dense =
+      '<div class="card overflow-hidden"><div class="card-head"><h3>Dense · striped</h3></div>'
+      + '<table class="t-table" style="font-size:11.5px"><thead><tr><th>SKU</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">Cost</th><th class="text-right">Revenue</th><th class="text-right">Margin</th></tr></thead><tbody>'
+      + D().PRODUCTS.map((p, i) => '<tr style="background:' + (i % 2 ? 'rgb(var(--bg-soft) / .55)' : 'transparent') + '"><td class="font-mono text-[10.5px]" style="padding:6px 14px">' + p.sku + '</td><td style="padding:6px 14px">' + p.name + '</td><td class="text-right font-mono" style="padding:6px 14px">' + p.stock + '</td><td class="text-right font-mono" style="padding:6px 14px">$' + (p.price * 0.45).toFixed(2) + '</td><td class="text-right font-mono" style="padding:6px 14px">$' + p.price.toFixed(2) + '</td><td class="text-right font-mono text-emerald" style="padding:6px 14px">55%</td></tr>').join('')
+      + '</tbody></table></div>';
+
+    /* 8 — Table with inline mini-charts (sparklines) */
+    const withCharts =
+      '<div class="card overflow-hidden"><div class="card-head"><h3>Performance · with inline sparklines</h3></div>'
+      + '<table class="t-table"><thead><tr><th>Metric</th><th>Value</th><th>Trend (7d)</th><th class="text-right">Change</th></tr></thead><tbody>'
+      + [['Revenue', '$24,892', 'iris', '+12%', 'emerald'], ['Sessions', '1,842', 'fuchsia', '+8.4%', 'emerald'], ['Bounce', '24%', 'cyan', '-2.1%', 'emerald'], ['Errors', '0.04%', 'rose', '-0.01%', 'emerald'], ['Conversion', '3.2%', 'amber', '+0.4%', 'emerald']].map(([m, v, c, ch, cc]) => {
+        const data = Array.from({length: 20}, () => Math.random() * 30 + 5);
+        const max = Math.max(...data);
+        const points = data.map((d, i) => (i * 8) + ',' + (28 - (d / max) * 24)).join(' ');
+        return '<tr><td><strong>' + m + '</strong></td><td class="font-mono">' + v + '</td><td><svg width="160" height="32" viewBox="0 0 160 32"><polyline points="' + points + '" stroke="rgb(var(--' + c + '))" stroke-width="2" fill="none"/></svg></td><td class="text-right font-mono text-' + cc + '">' + ch + '</td></tr>';
+      }).join('')
       + '</tbody></table></div>';
 
     return head
-      + section('Data table — sortable, sticky, paginated', dataTable)
-      + section('Comparison table', compare);
+      + section('1 · Data table (filter · export · pagination)', dataTable)
+      + section('2 · Sortable header (click columns to sort)', sortable)
+      + section('3 · Sticky-header table', sticky)
+      + section('4 · Expandable rows', expandable)
+      + section('5 · Plan comparison', compare)
+      + section('6 · Responsive card-list table', responsive)
+      + section('7 · Dense · striped', dense)
+      + section('8 · Table with inline sparklines', withCharts);
   }
 
   /* ─────────────────────────────────────────────────────────────────
@@ -642,36 +681,202 @@
   /* ─────────────────────────────────────────────────────────────────
    * CHARTS — line / bar / pie / radar / sparkline
    * ───────────────────────────────────────────────────────────────── */
+  /* helper — produce a tooltip-enabled line + area combo via inline SVG (no chart builder) */
+  function inlineLine(data, opts) {
+    opts = opts || {};
+    const w = opts.w || 600, h = opts.h || 220, pad = 24;
+    const max = Math.max.apply(null, data), min = Math.min.apply(null, data);
+    const xs = data.map((_, i) => pad + (i * (w - pad * 2)) / (data.length - 1));
+    const ys = data.map((v) => h - pad - ((v - min) / Math.max(1, max - min)) * (h - pad * 2));
+    const p = xs.map((x, i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + ys[i].toFixed(1)).join(' ');
+    const area = p + ' L' + xs[xs.length - 1] + ' ' + (h - pad) + ' L' + xs[0] + ' ' + (h - pad) + ' Z';
+    const labels = opts.labels || data.map((_, i) => '#' + (i+1));
+    const color = opts.color || '#7c3aed';
+    const fillId = 'fl-' + (opts.id || Math.random().toString(36).slice(2, 7));
+    return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+      + '<defs><linearGradient id="' + fillId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + color + '" stop-opacity=".35"/><stop offset="1" stop-color="' + color + '" stop-opacity="0"/></linearGradient></defs>'
+      + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
+      + '<path d="' + area + '" fill="url(#' + fillId + ')"/>'
+      + '<path d="' + p + '" stroke="' + color + '" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      + xs.map((x, i) => '<circle class="chart-point" cx="' + x + '" cy="' + ys[i] + '" r="4" fill="#fff" stroke="' + color + '" stroke-width="2" data-v="' + data[i] + (opts.suffix || '') + '" data-l="' + labels[i] + '"/>').join('')
+      + '</svg>';
+  }
+
   function viewChartLine() {
-    const head = pageHead('Line / Area chart', 'Inline SVG line chart, no library dependency.',
+    const head = pageHead('Line / Area · 4 chart variants',
+      'Classic, smoothed, multi-series, and stepped — every point hover shows a tooltip.',
       [{title:'Charts'}, {title:'Line'}]);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return head
-      + section('Monthly revenue',
-        '<div class="card"><div class="card-head"><h3>Last 12 months</h3></div><div class="p-4" data-chart="line-revenue-lg"></div></div>')
-      + section('Comparison area chart',
-        '<div class="card"><div class="card-head"><h3>Visitors vs sessions</h3></div><div class="p-4" data-chart="area-compare"></div></div>');
+      + section('1 · Default revenue line',
+        '<div class="card chart-host" data-chart="passthrough"><div class="card-head"><h3>Last 12 months · $24k → $86k</h3><span class="pill pill-iris">+18%</span></div><div class="p-4">' + inlineLine([24,28,35,42,38,52,61,57,68,74,82,86], {labels: months, color: '#7c3aed', suffix: 'k', id: 'l1'}) + '</div></div>')
+      + section('2 · Smoothed line · Cyan',
+        '<div class="card chart-host"><div class="card-head"><h3>Active users · weekly</h3></div><div class="p-4">' + inlineLine([1240,1380,1620,1820,2010,2280,2620], {labels:['W1','W2','W3','W4','W5','W6','W7'], color: '#22d3ee', id: 'l2'}) + '</div></div>')
+      + section('3 · Multi-series · area compare',
+        '<div class="card"><div class="card-head"><h3>Visitors vs sessions</h3></div><div class="p-4" data-chart="area-compare"></div></div>')
+      + section('4 · Stepped line · server load',
+        '<div class="card chart-host"><div class="card-head"><h3>CPU usage · last hour (%)</h3></div><div class="p-4">'
+        + (function(){
+            const data = [22,28,31,45,52,48,68,72,65,80,78,88];
+            const w = 600, h = 220, pad = 24;
+            const xs = data.map((_, i) => pad + (i * (w - pad * 2)) / (data.length - 1));
+            const ys = data.map((v) => h - pad - (v / 100) * (h - pad * 2));
+            let p = 'M' + xs[0] + ' ' + ys[0];
+            for (let i = 1; i < xs.length; i++) {
+              const midX = (xs[i-1] + xs[i]) / 2;
+              p += ' L' + midX + ' ' + ys[i-1] + ' L' + midX + ' ' + ys[i] + ' L' + xs[i] + ' ' + ys[i];
+            }
+            return '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+              + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('')
+              + '<path d="' + p + '" stroke="#10b981" stroke-width="2.5" fill="none"/>'
+              + xs.map((x, i) => '<circle class="chart-point" cx="' + x + '" cy="' + ys[i] + '" r="4" fill="#10b981" data-v="' + data[i] + '%" data-l="-' + (12-i) + ' min"/>').join('')
+              + '</svg>';
+          })()
+        + '</div></div>');
   }
+
   function viewChartBar() {
-    const head = pageHead('Bar / Stacked bar', 'Vertical bars with gradient fills.',
+    const head = pageHead('Bar · 5 chart variants',
+      'Vertical bars, horizontal, stacked, grouped and gradient hero — every bar tooltip on hover.',
       [{title:'Charts'}, {title:'Bar'}]);
-    return head + section('Sales by category', '<div class="card"><div class="card-head"><h3>Weekly sales</h3></div><div class="p-4" data-chart="bar-sales"></div></div>');
+    const data = [40, 65, 35, 80, 52, 90, 70];
+    const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    return head
+      + section('1 · Classic vertical bar',
+        '<div class="card"><div class="card-head"><h3>Weekly sales</h3></div><div class="p-4" data-chart="bar-sales"></div></div>')
+
+      + section('2 · Horizontal bar',
+        '<div class="card chart-host"><div class="card-head"><h3>Top channels</h3></div><div class="p-5 space-y-3">'
+        + [['Direct',92,'iris'],['Organic',78,'fuchsia'],['Referral',64,'cyan'],['Social',45,'emerald'],['Email',28,'amber']].map(([n,v,c]) => '<div><div class="flex justify-between text-xs mb-1"><span class="font-semibold">' + n + '</span><span class="text-muted font-mono">' + v + '%</span></div><div class="h-3 rounded-full bg-soft overflow-hidden"><div class="chart-bar" style="width:' + v + '%;height:100%;background:linear-gradient(90deg,rgb(var(--' + c + ')),rgb(var(--iris)))" data-v="' + v + '%" data-l="' + n + '"></div></div></div>').join('')
+        + '</div></div>')
+
+      + section('3 · Stacked bar · cost breakdown',
+        '<div class="card chart-host"><div class="card-head"><h3>Quarterly spend (k$)</h3></div><div class="p-5">'
+        + (function() {
+            const w = 600, h = 240, pad = 30, qs = ['Q1','Q2','Q3','Q4'];
+            const segs = [['Salaries', 'iris', [42,48,55,60]], ['Cloud', 'fuchsia', [12,18,14,22]], ['Marketing', 'cyan', [8,14,18,20]], ['Tools', 'emerald', [4,6,5,8]]];
+            const totals = qs.map((_, i) => segs.reduce((s, [,,arr]) => s + arr[i], 0));
+            const max = Math.max.apply(null, totals);
+            const bw = 60, gap = (w - pad * 2) / qs.length;
+            let svg = '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+              + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('');
+            qs.forEach((q, i) => {
+              const cx = pad + i * gap + gap/2;
+              let yCur = h - pad;
+              segs.forEach(([n, c, arr]) => {
+                const v = arr[i], bh = (v / max) * (h - pad * 2);
+                yCur -= bh;
+                svg += '<rect class="chart-bar" x="' + (cx - bw/2) + '" y="' + yCur + '" width="' + bw + '" height="' + bh + '" fill="rgb(var(--' + c + '))" data-v="' + v + 'k" data-l="' + n + ' · ' + q + '"/>';
+              });
+              svg += '<text x="' + cx + '" y="' + (h - 8) + '" text-anchor="middle" font-size="11" fill="rgb(var(--muted))">' + q + '</text>';
+            });
+            svg += '</svg>';
+            return svg + '<div class="flex gap-3 flex-wrap text-xs mt-3">' + segs.map(([n, c]) => '<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:rgb(var(--' + c + '))"></span>' + n + '</span>').join('') + '</div>';
+          })()
+        + '</div></div>')
+
+      + section('4 · Grouped bar · before/after',
+        '<div class="card chart-host"><div class="card-head"><h3>Performance before vs after launch</h3></div><div class="p-5">'
+        + (function() {
+            const w = 600, h = 220, pad = 30, cats = ['LCP','FID','CLS','TBT','SI'];
+            const a = [4.2, 280, 0.18, 320, 5.1], b = [1.8, 80, 0.04, 110, 2.4];
+            const max = Math.max.apply(null, a.concat(b));
+            const bw = 18, gap = (w - pad * 2) / cats.length;
+            let svg = '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+              + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('');
+            cats.forEach((c, i) => {
+              const x = pad + i * gap + gap/2;
+              const ha = (a[i] / max) * (h - pad * 2);
+              const hb = (b[i] / max) * (h - pad * 2);
+              svg += '<rect class="chart-bar" x="' + (x - bw - 2) + '" y="' + (h - pad - ha) + '" width="' + bw + '" height="' + ha + '" rx="3" fill="#f43f5e" data-v="' + a[i] + '" data-l="Before · ' + c + '"/>';
+              svg += '<rect class="chart-bar" x="' + (x + 2) + '" y="' + (h - pad - hb) + '" width="' + bw + '" height="' + hb + '" rx="3" fill="#10b981" data-v="' + b[i] + '" data-l="After · ' + c + '"/>';
+              svg += '<text x="' + x + '" y="' + (h - 8) + '" text-anchor="middle" font-size="11" fill="rgb(var(--muted))">' + c + '</text>';
+            });
+            svg += '</svg>';
+            return svg + '<div class="flex gap-3 text-xs mt-3"><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:#f43f5e"></span>Before</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background:#10b981"></span>After launch</span></div>';
+          })()
+        + '</div></div>')
+
+      + section('5 · Gradient hero bar (giant column)',
+        '<div class="card chart-host"><div class="card-head"><h3>Revenue history</h3></div><div class="p-5">'
+        + (function() {
+            const w = 600, h = 260, pad = 28, mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const max = Math.max.apply(null, mo.map((_, i) => 30 + i * 6 + (i % 3) * 8));
+            const bw = (w - pad * 2) / mo.length * 0.7;
+            const gap = (w - pad * 2) / mo.length;
+            let svg = '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
+              + '<defs><linearGradient id="ghero" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d846ef"/><stop offset=".5" stop-color="#7c3aed"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>'
+              + Array.from({length: 4}, (_, i) => '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + (pad + i * (h - pad * 2) / 3) + '" y2="' + (pad + i * (h - pad * 2) / 3) + '"/>').join('');
+            mo.forEach((m, i) => {
+              const v = 30 + i * 6 + (i % 3) * 8, bh = (v / max) * (h - pad * 2);
+              const x = pad + i * gap + (gap - bw) / 2;
+              const y = h - pad - bh;
+              svg += '<rect class="chart-bar" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh + '" rx="8" fill="url(#ghero)" data-v="$' + (v * 1000).toLocaleString() + '" data-l="' + m + ' 2026"/>';
+              svg += '<text x="' + (pad + i * gap + gap/2) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="10" fill="rgb(var(--muted))">' + m + '</text>';
+            });
+            svg += '</svg>';
+            return svg;
+          })()
+        + '</div></div>');
   }
+
   function viewChartPie() {
-    const head = pageHead('Pie · Donut · Radar', 'Slice and dial views.',
+    const head = pageHead('Pie · Donut · Radar · 5 designs',
+      'Donut, simple pie, half-donut gauge, radar — all with hover tooltips.',
       [{title:'Charts'}, {title:'Pie'}]);
     return head
-      + section('Channels donut', '<div class="card"><div class="card-head"><h3>Traffic source</h3></div><div class="p-6 grid place-items-center" data-chart="donut-channels-lg"></div></div>')
-      + section('Radar chart', '<div class="card"><div class="card-head"><h3>Skills coverage</h3></div><div class="p-6 grid place-items-center" data-chart="radar-skills"></div></div>');
+      + section('1 · Donut — traffic source',
+        '<div class="card"><div class="card-head"><h3>Channels</h3></div><div class="p-6 grid place-items-center" data-chart="donut-channels-lg"></div></div>')
+
+      + section('2 · Pie (no inner hole) — language usage',
+        '<div class="card chart-host"><div class="card-head"><h3>Audience language</h3></div><div class="p-6 grid place-items-center">'
+        + (function() {
+            const data = [['English',54,'#7c3aed'],['Russian',22,'#d846ef'],['Azerbaijani',18,'#22d3ee'],['Turkish',6,'#10b981']];
+            const total = data.reduce((s, d) => s + d[1], 0);
+            const r = 84, cx = 100, cy = 100;
+            let acc = -Math.PI / 2;
+            const arcs = data.map(([n, v, c]) => {
+              const ang = (v / total) * Math.PI * 2;
+              const a0 = acc, a1 = acc + ang; acc = a1;
+              const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+              const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+              const large = ang > Math.PI ? 1 : 0;
+              return '<path class="chart-slice" d="M' + cx + ' ' + cy + ' L' + x0 + ' ' + y0 + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1 + ' Z" fill="' + c + '" data-v="' + v + '" data-l="' + n + '"/>';
+            }).join('');
+            return '<svg width="200" height="200" viewBox="0 0 200 200">' + arcs + '</svg>'
+              + '<ul class="grid grid-cols-2 gap-1 mt-3 text-xs w-full max-w-xs">' + data.map(([n, v, c]) => '<li class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:' + c + '"></span><span class="flex-1">' + n + '</span><span class="text-muted">' + v + '%</span></li>').join('') + '</ul>';
+          })()
+        + '</div></div>')
+
+      + section('3 · Half-donut gauge — score',
+        '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">'
+        + [['Health','86','emerald'],['Risk','24','rose'],['Coverage','62','iris']].map(([t, v, c]) => '<div class="card card-pad text-center"><div class="text-xs uppercase tracking-wider text-muted">' + t + '</div><div class="relative w-40 h-24 mx-auto mt-3">'
+            + '<svg viewBox="0 0 100 60" class="w-full h-full"><path d="M5 55 A 45 45 0 0 1 95 55" stroke="rgb(var(--line))" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M5 55 A 45 45 0 0 1 95 55" stroke="rgb(var(--' + c + '))" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="141.3" stroke-dashoffset="' + (141.3 - 141.3 * v / 100) + '"/></svg>'
+            + '<div class="absolute inset-0 grid place-items-end pb-2"><div class="font-bold text-3xl" style="font-family:DM Sans;color:rgb(var(--' + c + '))">' + v + '<span class="text-sm text-muted">%</span></div></div>'
+            + '</div></div>').join('')
+        + '</div>')
+
+      + section('4 · Radar — skills coverage',
+        '<div class="card"><div class="card-head"><h3>Capability map</h3></div><div class="p-6 grid place-items-center" data-chart="radar-skills"></div></div>')
+
+      + section('5 · Sunburst-style (donut with center label)',
+        '<div class="card"><div class="card-head"><h3>Spending breakdown — May</h3></div><div class="p-6 grid place-items-center" data-chart="donut-plans"></div></div>');
   }
 
   /* ─────────────────────────────────────────────────────────────────
    * AUTH pages
    * ───────────────────────────────────────────────────────────────── */
   function viewLogin() {
-    const head = pageHead('Login & signup', 'Split-screen auth screens with aurora hero.',
+    const head = pageHead('Login & signup · 6 designs',
+      'Split-screen aurora hero · centered minimalist · two-step signup · social-only quick start · dark glass · device confirm flow.',
       [{title:'Auth'}, {title:'Login'}]);
+    const socialBtns = '<button class="btn btn-secondary justify-center">' + I('github') + '<span>GitHub</span></button><button class="btn btn-secondary justify-center">' + I('mail') + '<span>Google</span></button>';
+
     return head
-      + section('Demo',
+
+      /* ── 1 · Original split-screen aurora hero ── */
+      + section('1 · Split-screen aurora hero',
         '<div class="card overflow-hidden grid md:grid-cols-2">'
         + '<div class="relative p-8 text-white overflow-hidden min-h-[420px]" style="background:linear-gradient(135deg,#5618b5,#7c3aed,#d846ef);background-size:200% 200%;animation:aurora-pan 12s ease-in-out infinite">'
         + '  <div style="font-family:DM Sans;font-weight:700;font-size:18px" class="flex items-center gap-2">' + I_('sparkles', 22) + 'VGF26 Studio</div>'
@@ -687,9 +892,83 @@
         + '  <div class="flex items-center justify-between mt-4 text-xs"><label class="flex items-center gap-2 cursor-pointer"><span class="checkbox is-on" data-check></span><span>Remember me</span></label><a href="#/auth/forgot" class="text-iris">Forgot password?</a></div>'
         + '  <button class="btn btn-primary justify-center mt-6">Sign in</button>'
         + '  <div class="my-5 flex items-center gap-3 text-xs text-muted"><div class="flex-1 divider-h"></div>OR<div class="flex-1 divider-h"></div></div>'
-        + '  <div class="grid grid-cols-2 gap-2"><button class="btn btn-secondary justify-center">' + I('github') + '<span>GitHub</span></button><button class="btn btn-secondary justify-center">' + I('mail') + '<span>Google</span></button></div>'
+        + '  <div class="grid grid-cols-2 gap-2">' + socialBtns + '</div>'
         + '  <p class="text-xs text-center text-muted mt-6">No account? <a href="#" class="text-iris">Create one</a></p>'
         + '</div>'
+        + '</div>')
+
+      /* ── 2 · Centered minimal card ── */
+      + section('2 · Centered minimalist',
+        '<div class="card card-pad max-w-md mx-auto"><div class="text-center mb-6">'
+        + '<div class="grid place-items-center w-14 h-14 rounded-2xl mx-auto mb-3 text-white" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)))">' + I_('sparkles', 28) + '</div>'
+        + '<h3 style="font-family:DM Sans;font-weight:700;font-size:22px">Sign in to VGF26</h3>'
+        + '<p class="text-sm text-muted mt-1">Continue to your iridescent studio</p></div>'
+        + '<label class="label">Email or username</label><input class="input mb-3" placeholder="you@email.com">'
+        + '<label class="label">Password</label><div class="relative"><input class="input" type="password" value="iridescent2026" id="pw-mini" style="padding-right:42px"><button class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-iris p-1" data-act="toggle-pw" data-target="pw-mini">' + I_('eye', 16) + '</button></div>'
+        + '<button class="btn btn-primary w-full justify-center mt-5">Continue →</button>'
+        + '<div class="my-5 flex items-center gap-3 text-xs text-muted"><div class="flex-1 divider-h"></div>OR<div class="flex-1 divider-h"></div></div>'
+        + '<div class="grid grid-cols-2 gap-2">' + socialBtns + '</div>'
+        + '<p class="text-xs text-center text-muted mt-6">No account? <a href="#" class="text-iris">Create one</a> · <a href="#/auth/forgot" class="text-iris">Forgot password</a></p>'
+        + '</div>')
+
+      /* ── 3 · Two-step signup wizard ── */
+      + section('3 · Two-step signup (account → workspace)',
+        '<div class="card card-pad max-w-xl mx-auto">'
+        + '<div class="flex items-center gap-2 mb-6">'
+        +    ['Account','Workspace','Invite'].map((t, k) => '<div class="flex items-center ' + (k < 2 ? 'flex-1' : '') + '"><div class="grid place-items-center w-9 h-9 rounded-full font-bold text-sm shrink-0" style="' + (k === 0 ? 'background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff' : k === 1 ? 'background:rgb(var(--iris));color:#fff' : 'background:rgb(var(--line));color:rgb(var(--muted))') + '">' + (k === 0 ? '✓' : (k+1)) + '</div><span class="text-xs ml-2 ' + (k > 1 ? 'text-muted' : 'font-semibold') + '">' + t + '</span>' + (k < 2 ? '<div class="flex-1 h-px mx-3 ' + (k === 0 ? 'bg-iris' : 'bg-[rgb(var(--line))]') + '"></div>' : '') + '</div>').join('')
+        + '</div>'
+        + '<h3 class="font-semibold text-lg mb-3">Create your workspace</h3>'
+        + '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
+        + '<div><label class="label">Workspace name</label><input class="input" value="Aurora Studio"></div>'
+        + '<div><label class="label">URL</label><div class="flex"><span class="input rounded-r-none flex items-center px-3 text-muted" style="height:40px;width:auto">vgf26.app/</span><input class="input rounded-l-none border-l-0" value="aurora"></div></div>'
+        + '<div class="md:col-span-2"><label class="label">Team size</label><div class="grid grid-cols-4 gap-2 mt-1">' + ['1','2-9','10-49','50+'].map((t, k) => '<button class="px-3 py-2 rounded-lg border text-sm ' + (k === 1 ? 'bg-[rgb(var(--iris-soft))] text-iris border-iris font-semibold' : 'border-[rgb(var(--line))] text-muted hover:bg-soft') + '">' + t + '</button>').join('') + '</div></div>'
+        + '</div>'
+        + '<div class="flex justify-between mt-5 pt-4 border-t border-[rgb(var(--line))]"><button class="btn btn-secondary">' + I('chevron-left') + '<span>Back</span></button><button class="btn btn-primary">Continue<span>' + I('chevron-right') + '</span></button></div>'
+        + '</div>')
+
+      /* ── 4 · Social-only quick start ── */
+      + section('4 · Social-only quick start (no password)',
+        '<div class="card card-pad max-w-md mx-auto text-center py-8">'
+        + '<div class="grid place-items-center w-16 h-16 rounded-2xl mx-auto mb-4 text-white" style="background:linear-gradient(135deg,#7c3aed,#d846ef)">' + I_('sparkles', 32) + '</div>'
+        + '<h3 class="font-bold text-xl" style="font-family:DM Sans">Sign in with one click</h3>'
+        + '<p class="text-sm text-muted mt-2 mb-6">We never see your password. Continue with an identity provider you already trust.</p>'
+        + '<div class="space-y-2">'
+        +    [['github','Continue with GitHub'],['mail','Continue with Google'],['apple' in {} ? 'apple' : 'sparkles','Continue with Apple']].map(([i,t]) => '<button class="btn btn-secondary w-full justify-center py-3">' + I_(i === 'apple' ? 'sparkles' : i, 18) + '<span>' + t + '</span></button>').join('')
+        + '</div>'
+        + '<div class="my-4 flex items-center gap-3 text-xs text-muted"><div class="flex-1 divider-h"></div>OR<div class="flex-1 divider-h"></div></div>'
+        + '<input class="input" placeholder="you@email.com">'
+        + '<button class="btn btn-primary w-full justify-center mt-3">Email me a magic link</button>'
+        + '<p class="text-[11px] text-muted mt-5">By continuing you agree to the <a href="#" class="text-iris">terms</a></p>'
+        + '</div>')
+
+      /* ── 5 · Dark glassmorphism over photo ── */
+      + section('5 · Dark glassmorphic over imagery',
+        '<div class="card overflow-hidden relative grid place-items-center" style="min-height:520px;background-image:url(' + D().PEXELS[2].large + ');background-size:cover;background-position:center">'
+        + '<div class="absolute inset-0" style="background:linear-gradient(135deg,rgba(20,5,50,.78),rgba(80,15,160,.65))"></div>'
+        + '<div class="relative rounded-2xl p-8 w-full max-w-md text-white" style="background:rgba(255,255,255,.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15)">'
+        + '<div class="font-bold mb-1 flex items-center gap-2" style="font-family:DM Sans;font-size:18px">' + I_('sparkles', 22) + 'VGF26</div>'
+        + '<h3 class="font-bold text-2xl mt-4">Welcome back</h3>'
+        + '<p class="text-sm opacity-80 mt-1">Sign in to access your dashboard.</p>'
+        + '<label class="text-[10px] uppercase tracking-wider opacity-80 mt-5 block">Email</label>'
+        + '<input class="mt-1 w-full px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff" placeholder="you@email.com">'
+        + '<label class="text-[10px] uppercase tracking-wider opacity-80 mt-3 block">Password</label>'
+        + '<input class="mt-1 w-full px-3 py-2 rounded-lg" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff" type="password" value="••••••••">'
+        + '<button class="btn w-full justify-center mt-5" style="background:#fff;color:rgb(var(--iris))">Sign in</button>'
+        + '<p class="text-xs text-center mt-4 opacity-70">No account? <a href="#" class="underline">Sign up</a></p>'
+        + '</div>'
+        + '</div>')
+
+      /* ── 6 · Device-confirm flow (push to phone) ── */
+      + section('6 · Confirm sign-in on your phone',
+        '<div class="card card-pad max-w-md mx-auto text-center py-10">'
+        + '<div class="grid place-items-center w-20 h-20 rounded-2xl mx-auto mb-4 text-white relative" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)))">' + I_('smartphone', 36) + '<span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full grid place-items-center text-white text-xs" style="background:rgb(var(--emerald))">' + I_('check', 12) + '</span></div>'
+        + '<h3 class="font-bold text-xl" style="font-family:DM Sans">Confirm on your phone</h3>'
+        + '<p class="text-sm text-muted mt-2 max-w-xs mx-auto">We sent a push to <strong>iPhone 15 · Baku, AZ</strong>. Tap "Yes, it\'s me" to continue.</p>'
+        + '<div class="flex gap-2 justify-center mt-5">'
+        +    Array.from({length: 4}, (_,k) => '<div class="grid place-items-center w-12 h-12 font-mono font-bold text-xl rounded-xl border-2 ' + (k < 2 ? 'border-iris bg-[rgb(var(--iris-soft))] text-iris' : 'border-[rgb(var(--line))] text-muted') + '">' + (k < 2 ? ['4','7'][k] : '') + '</div>').join('')
+        + '</div>'
+        + '<p class="text-xs text-muted mt-4">Pairing code · expires in 02:48</p>'
+        + '<button class="btn btn-secondary mt-5">' + I('refresh') + '<span>Try another method</span></button>'
         + '</div>');
   }
 
@@ -913,77 +1192,213 @@
    * Settings (System Settings page)
    * ───────────────────────────────────────────────────────────────── */
   function viewSettings() {
-    const head = pageHead('Settings · Preferences', 'Profile, account, notifications, security, integrations.',
+    const head = pageHead('Settings · Preferences', 'Profile, account, notifications, security, integrations — every tab fully wired.',
       [{title:'System'}, {title:'Settings'}]);
-    const tabs = ['Profile', 'Account', 'Notifications', 'Security', 'Integrations'];
-    return head
-      + '<div class="card overflow-hidden">'
-      + '<div class="card-head"><div class="flex gap-2 overflow-x-auto">' + tabs.map((t,i) => '<button class="btn btn-xs ' + (i===0 ? 'btn-primary' : 'btn-ghost') + '">' + t + '</button>').join('') + '</div></div>'
-      + '<div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">'
-      + '<div class="md:col-span-1 text-center"><div class="avatar mx-auto" style="width:96px;height:96px;font-size:36px">VF</div><h4 class="font-semibold mt-3">Vugar Familoglu</h4><p class="text-sm text-muted">vugar@vgf26.io</p><button class="btn btn-secondary mt-3">Upload photo</button></div>'
+
+    const profilePanel =
+      '<div class="grid grid-cols-1 md:grid-cols-3 gap-6">'
+      + '<div class="md:col-span-1 text-center"><div class="avatar mx-auto" style="width:96px;height:96px;font-size:36px">VF</div><h4 class="font-semibold mt-3">Vugar Familoglu</h4><p class="text-sm text-muted">vugar@vgf26.io</p><button class="btn btn-secondary mt-3">' + I('upload') + '<span>Upload photo</span></button></div>'
       + '<div class="md:col-span-2 space-y-4">'
       + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="label">First name</label><input class="input" value="Vugar"></div><div><label class="label">Last name</label><input class="input" value="Familoglu"></div></div>'
       + '<div><label class="label">Bio</label><textarea class="textarea">Indie engineer & designer. Building the iridescent admin studio.</textarea></div>'
       + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="label">Country</label><select class="select"><option>Azerbaijan</option><option>Germany</option><option>Japan</option></select></div><div><label class="label">Timezone</label><select class="select"><option>Asia/Baku (UTC+4)</option><option>Europe/Berlin (UTC+1)</option></select></div></div>'
       + '<div class="flex justify-end gap-2 pt-2 border-t border-[rgb(var(--line))]"><button class="btn btn-secondary">' + I18n.t('common.cancel') + '</button><button class="btn btn-primary">' + I18n.t('common.save') + '</button></div>'
-      + '</div></div></div>';
+      + '</div></div>';
+
+    const accountPanel =
+      '<div class="max-w-2xl space-y-5">'
+      + '<div><label class="label">Email address</label><input class="input" value="vugar@vgf26.io" type="email"><p class="text-[11px] text-muted mt-1">We\'ll send a verification email if you change this.</p></div>'
+      + '<div><label class="label">Username</label><div class="flex"><span class="input rounded-r-none flex items-center px-3 text-muted" style="height:40px;width:auto">vgf26.app/</span><input class="input rounded-l-none border-l-0" value="vugar"></div></div>'
+      + '<div class="card-pad bg-soft rounded-xl"><h5 class="font-semibold text-sm mb-2">Danger zone</h5><p class="text-xs text-muted mb-3">Permanently delete this account. This cannot be undone.</p><button class="btn btn-danger">Delete account</button></div>'
+      + '</div>';
+
+    const notifPanel =
+      '<div class="max-w-2xl space-y-4">'
+      + [['Product updates', 'Weekly digest with what\'s new', true],
+         ['Mentions',        'When someone @mentions you',     true],
+         ['Comment replies', 'Replies to your comments',       true],
+         ['Marketing',       'Tips, offers, news',             false],
+         ['Security alerts', 'Sign-in attempts, password',     true]].map(([t, d, on]) =>
+            '<div class="flex items-center justify-between p-3 rounded-xl border border-[rgb(var(--line))]"><div><div class="font-semibold text-sm">' + t + '</div><div class="text-xs text-muted">' + d + '</div></div><span class="switch ' + (on ? 'is-on' : '') + '" data-toggle></span></div>').join('')
+      + '</div>';
+
+    const securityPanel =
+      '<div class="max-w-2xl space-y-4">'
+      + '<div class="card-pad rounded-xl bg-soft"><h5 class="font-semibold text-sm">Password</h5><p class="text-xs text-muted mt-1 mb-3">Last changed 42 days ago</p><button class="btn btn-secondary">Change password</button></div>'
+      + '<div class="card-pad rounded-xl bg-soft"><div class="flex items-center justify-between"><div><h5 class="font-semibold text-sm">Two-factor auth</h5><p class="text-xs text-muted mt-1">TOTP authenticator</p></div><span class="pill pill-emerald">ENABLED</span></div></div>'
+      + '<div class="card-pad rounded-xl bg-soft"><h5 class="font-semibold text-sm mb-3">Active sessions</h5>'
+      +    ['MacBook Pro · Chrome · Baku, AZ · this device', 'iPhone 15 · Safari · Baku, AZ · 3d ago', 'Windows · Edge · Berlin, DE · 2w ago'].map((s, i) => '<div class="flex items-center justify-between py-2 text-sm">' + I_('monitor', 14, 'text-iris') + '<span class="flex-1 ml-2">' + s + '</span>' + (i === 0 ? '<span class="pill pill-emerald">current</span>' : '<button class="btn btn-danger btn-xs">Sign out</button>') + '</div>').join('')
+      + '</div></div>';
+
+    const intPanel =
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">'
+      + [['Slack', 'message-circle', 'iris', true],['GitHub', 'github', 'fuchsia', true],['Stripe', 'credit-card', 'cyan', false],['Vercel', 'rocket', 'emerald', false],['Figma', 'palette', 'amber', false],['Linear', 'check-circle', 'rose', true]].map(([n, ic, c, on]) =>
+          '<div class="card card-pad flex items-center gap-3"><span class="grid place-items-center w-10 h-10 rounded-xl" style="background:rgb(var(--' + c + ')/.14);color:rgb(var(--' + c + '))">' + I(ic) + '</span><div class="flex-1"><div class="font-semibold text-sm">' + n + '</div><div class="text-[11px] text-muted">' + (on ? 'Connected' : 'Not connected') + '</div></div><button class="btn ' + (on ? 'btn-danger' : 'btn-primary') + ' btn-xs">' + (on ? 'Disconnect' : 'Connect') + '</button></div>').join('')
+      + '</div>';
+
+    return head
+      + '<div class="card overflow-hidden tab-set" data-tab-set>'
+      + '  <div class="card-head !p-0 border-b border-[rgb(var(--line))] tab-underline"><div class="flex flex-wrap">'
+      +      [['profile','Profile'],['account','Account'],['notif','Notifications'],['security','Security'],['integrations','Integrations']].map(([k, l], i) => '<button data-tab="' + k + '"' + (i === 0 ? ' class="is-active"' : '') + '>' + l + '</button>').join('')
+      + '  </div></div>'
+      + '  <div class="p-6">'
+      + '    <div data-tab-panel="profile"      class="is-active">' + profilePanel  + '</div>'
+      + '    <div data-tab-panel="account">'                          + accountPanel  + '</div>'
+      + '    <div data-tab-panel="notif">'                            + notifPanel    + '</div>'
+      + '    <div data-tab-panel="security">'                         + securityPanel + '</div>'
+      + '    <div data-tab-panel="integrations">'                     + intPanel      + '</div>'
+      + '  </div>'
+      + '</div>';
   }
 
   /* ─────────────────────────────────────────────────────────────────
    * Avatars / Badges / Ratings
    * ───────────────────────────────────────────────────────────────── */
   function viewAvatars() {
-    const head = pageHead('Avatars · Stacks · Groups', 'Initials, photos, gradients, status dots.',
+    const head = pageHead('Avatars · 7 variants',
+      'Sizes · stacks · status · shapes · with photo · grouped · gradient ring.',
       [{title:'Data'}, {title:'Avatars'}]);
+
+    const photo = (i) => DEMO.PEXELS && DEMO.PEXELS[i] ? DEMO.PEXELS[i].thumb : '';
+
     return head
-      + section('Sizes',
-        '<div class="card card-pad flex items-center gap-3">'
-        + [24, 28, 36, 44, 56, 72].map(s => '<div class="avatar" style="width:' + s + 'px;height:' + s + 'px;font-size:' + (s * 0.35) + 'px">VF</div>').join('')
+      + section('1 · Sizes',
+        '<div class="card card-pad flex items-end gap-3 flex-wrap">'
+        + [24, 28, 36, 44, 56, 72, 96].map(s => '<div class="avatar" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * 0.35) + 'px">VF</div>').join('')
         + '</div>')
-      + section('Stack',
-        '<div class="card card-pad"><div class="avatar-stack flex">'
-        + D().USERS.slice(0,6).map(u => '<div class="avatar">' + u.name.split(' ').map(x=>x[0]).join('') + '</div>').join('')
-        + '<div class="avatar" style="background:rgb(var(--line));color:rgb(var(--ink-2))">+12</div>'
-        + '</div></div>')
-      + section('Status indicators',
-        '<div class="card card-pad flex gap-6 flex-wrap">'
-        + ['online', 'busy', 'offline', 'away'].map(s => {
+
+      + section('2 · Avatar stack with overflow',
+        '<div class="card card-pad space-y-3">'
+        + '<div class="avatar-stack flex">' + D().USERS.slice(0,6).map(u => '<div class="avatar">' + u.name.split(' ').map(x=>x[0]).join('') + '</div>').join('') + '<div class="avatar" style="background:rgb(var(--line));color:rgb(var(--ink-2))">+12</div></div>'
+        + '<div class="avatar-stack flex">' + D().USERS.slice(0,4).map((_,i) => '<div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(135deg,' + DEMO.GRADS[i].replace('linear-gradient(135deg, ', '').replace(')', '') + ')"></div>').join('') + '</div>'
+        + '</div>')
+
+      + section('3 · Status indicators',
+        '<div class="card card-pad flex gap-6 flex-wrap items-center">'
+        + ['online', 'busy', 'away', 'offline'].map(s => {
             const c = s === 'online' ? 'emerald' : s === 'busy' ? 'rose' : s === 'away' ? 'amber' : 'muted';
-            return '<div class="relative inline-block"><div class="avatar">VF</div><span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[rgb(var(--bg))]" style="background:rgb(var(--' + c + '))"></span></div>';
+            return '<div class="text-center"><div class="relative inline-block"><div class="avatar">VF</div><span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[rgb(var(--bg))]" style="background:rgb(var(--' + c + '))"></span></div><div class="text-[11px] text-muted mt-1">' + s + '</div></div>';
           }).join('')
+        + '</div>')
+
+      + section('4 · Shapes (square, rounded, circle)',
+        '<div class="card card-pad flex gap-4 items-center">'
+        + [['rounded-none','square'],['rounded-lg','rounded'],['rounded-full','circle']].map(([r, l]) => '<div class="text-center"><div class="grid place-items-center w-14 h-14 ' + r + ' text-white font-bold" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)))">VF</div><div class="text-[11px] text-muted mt-1">' + l + '</div></div>').join('')
+        + '</div>')
+
+      + section('5 · With Pexels photo',
+        '<div class="card card-pad flex gap-4 items-center flex-wrap">'
+        + [0,1,5,7,11].map((i, idx) => '<div class="text-center"><div class="grid place-items-center rounded-full overflow-hidden" style="width:56px;height:56px;border:2px solid rgb(var(--bg))"><img src="' + photo(i) + '" class="w-full h-full object-cover" alt=""></div><div class="text-[10px] text-muted mt-1">' + D().USERS[idx].name.split(' ')[0] + '</div></div>').join('')
+        + '</div>')
+
+      + section('6 · Group card (presence)',
+        '<div class="card card-pad max-w-md">'
+        + '<div class="flex items-center gap-3 mb-3"><h4 class="font-semibold flex-1">Studio team</h4><div class="text-[11px] text-emerald flex items-center gap-1"><span class="pill-dot" style="background:rgb(var(--emerald))"></span>5 active</div></div>'
+        + D().USERS.slice(0, 5).map(u => '<div class="flex items-center gap-3 py-2"><div class="relative">' + D().avatarFor(u.name) + '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[rgb(var(--bg-card))]" style="background:rgb(var(--' + (u.status === 'online' ? 'emerald' : u.status === 'busy' ? 'rose' : 'muted') + '))"></span></div><div class="flex-1"><div class="text-sm font-semibold">' + u.name + '</div><div class="text-xs text-muted">' + u.role + '</div></div><button class="btn btn-ghost btn-xs">' + I_('message-circle', 14) + '</button></div>').join('')
+        + '</div>')
+
+      + section('7 · Gradient ring (story style)',
+        '<div class="card card-pad flex gap-3 flex-wrap">'
+        + [0,1,2,3,4,5,6,7].map((i) => '<div class="text-center"><div class="p-[2px] rounded-full" style="background:conic-gradient(from 230deg,#7c3aed,#d846ef,#22d3ee,#10b981,#7c3aed)"><div class="p-[2px] rounded-full" style="background:rgb(var(--bg-card))"><div class="avatar overflow-hidden" style="width:54px;height:54px"><img src="' + photo(i + 2) + '" class="w-full h-full object-cover" alt=""></div></div></div><div class="text-[10px] text-muted mt-1">' + (D().USERS[i] || {name:'You'}).name.split(' ')[0] + '</div></div>').join('')
         + '</div>');
   }
 
   function viewBadges() {
-    const head = pageHead('Badges · Chips · Tags', 'Status pills, removable chips, gradient tags.',
+    const head = pageHead('Badges · Chips · Tags · 9 variants',
+      'Status pills · solid · soft · outlined · removable chips · gradient · counter dots · ribbons · category tags.',
       [{title:'Data'}, {title:'Badges'}]);
     return head
-      + section('Pill variants',
+      + section('1 · Status pills (dot + label)',
         '<div class="card card-pad space-x-2 space-y-2">'
-        + ['iris', 'emerald', 'amber', 'rose', 'cyan', 'muted'].map(c => '<span class="pill pill-' + c + '"><span class="pill-dot" style="background:rgb(var(--' + (c === 'muted' ? 'muted' : c) + '))"></span>' + c + '</span>').join('')
+        + ['iris', 'emerald', 'amber', 'rose', 'cyan', 'fuchsia', 'muted'].map(c => '<span class="pill pill-' + c + '"><span class="pill-dot" style="background:rgb(var(--' + (c === 'muted' ? 'muted' : c) + '))"></span>' + c + '</span>').join('')
         + '</div>')
-      + section('Removable chips',
+
+      + section('2 · Solid (saturated)',
         '<div class="card card-pad flex flex-wrap gap-2">'
-        + ['Design', 'Tokens', 'Iridescent', 'Tailwind', 'Vanilla JS'].map(t => '<span class="chip">' + t + ' <button class="text-iris">' + I_('x',12) + '</button></span>').join('')
+        + [['iris','Active'],['emerald','Success'],['amber','Pending'],['rose','Error'],['cyan','Info']].map(([c, l]) => '<span class="pill" style="background:rgb(var(--' + c + '));color:#fff;border:0">' + l + '</span>').join('')
         + '</div>')
-      + section('Gradient badges',
-        '<div class="card card-pad space-x-2">'
-        + ['Pro', 'New', 'Beta', 'AI'].map(t => '<span class="pill" style="background:linear-gradient(135deg,rgb(var(--iris)),rgb(var(--fuchsia)));color:#fff;border:0">' + t + '</span>').join('')
+
+      + section('3 · Outlined',
+        '<div class="card card-pad flex flex-wrap gap-2">'
+        + ['iris', 'emerald', 'amber', 'rose', 'cyan'].map(c => '<span class="pill" style="border:1px solid rgb(var(--' + c + '));color:rgb(var(--' + c + '));background:transparent">' + c + '</span>').join('')
+        + '</div>')
+
+      + section('4 · Removable chips',
+        '<div class="card card-pad flex flex-wrap gap-2">'
+        + ['Design', 'Tokens', 'Iridescent', 'Tailwind', 'Vanilla JS', 'A11y', 'Dark mode'].map(t => '<span class="chip">' + t + ' <button class="text-iris hover:text-rose">' + I_('x',12) + '</button></span>').join('')
+        + '</div>')
+
+      + section('5 · Gradient badges',
+        '<div class="card card-pad flex flex-wrap gap-2">'
+        + [['Pro','iris,fuchsia'],['New','emerald,cyan'],['Beta','amber,rose'],['AI','cyan,iris'],['Hot','rose,amber']].map(([t, g]) => '<span class="pill" style="background:linear-gradient(135deg,rgb(var(--' + g.split(',')[0] + ')),rgb(var(--' + g.split(',')[1] + ')));color:#fff;border:0">' + t + '</span>').join('')
+        + '</div>')
+
+      + section('6 · Counter dots (top-right)',
+        '<div class="card card-pad flex gap-4">'
+        + [['bell','iris',3],['message-circle','fuchsia',12],['mail','cyan',99],['cart','emerald','5+']].map(([ic,c,n]) => '<button class="relative grid place-items-center w-11 h-11 rounded-xl bg-soft border border-[rgb(var(--line))]">' + I(ic) + '<span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1.5 grid place-items-center rounded-full text-[10px] font-bold text-white" style="background:rgb(var(--' + c + '));border:2px solid rgb(var(--bg))">' + n + '</span></button>').join('')
+        + '</div>')
+
+      + section('7 · Ribbon badges',
+        '<div class="card card-pad grid grid-cols-2 md:grid-cols-4 gap-3">'
+        + [['Pro','iris'],['New','emerald'],['Sale','rose'],['Hot','amber']].map(([t,c]) => '<div class="relative aspect-video bg-soft rounded-xl flex items-center justify-center"><span class="absolute -top-2 -right-2 px-3 py-1 text-[10px] font-bold text-white rounded-md shadow-md" style="background:rgb(var(--' + c + '))">★ ' + t + '</span><span class="text-muted">Product card</span></div>').join('')
+        + '</div>')
+
+      + section('8 · Category tags with icon',
+        '<div class="card card-pad flex flex-wrap gap-2">'
+        + [['palette','Design','iris'],['code-2','Engineering','fuchsia'],['sparkles','Marketing','cyan'],['shield','Security','emerald'],['flame','Trending','amber']].map(([i,t,c]) => '<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:rgb(var(--' + c + ')/.12);color:rgb(var(--' + c + '))">' + I_(i, 12) + t + '</span>').join('')
+        + '</div>')
+
+      + section('9 · Numeric badges in tables',
+        '<div class="card card-pad space-y-2">'
+        + ['+12% (up)|emerald','-2.4% (down)|rose','24h|cyan','v1.2.0|iris','beta|amber'].map(s => { const [t,c] = s.split('|'); return '<div class="flex items-center gap-2 text-sm"><span class="font-mono">' + t + '</span><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider" style="background:rgb(var(--' + c + ')/.14);color:rgb(var(--' + c + '))">badge</span></div>'; }).join('')
         + '</div>');
   }
 
   function viewRatings() {
-    const head = pageHead('Rating Stars · Emoji picker', 'Star rating + emoji reactions.',
+    const head = pageHead('Rating · Emoji · 7 designs',
+      'Star rating · half-stars · big rating display · slider · hearts · review summary · emoji reactions.',
       [{title:'Data'}, {title:'Ratings'}]);
     return head
-      + section('Star rating',
-        '<div class="card card-pad flex flex-col gap-3" data-mount="rating">'
-        + '<div class="flex items-center gap-2" data-rating="r1">' + [1,2,3,4,5].map(i => '<button data-v="' + i + '" class="text-amber" style="font-size:24px">★</button>').join('') + '<span class="text-sm text-muted ml-3" data-rating-out>—</span></div>'
+      + section('1 · Interactive star rating',
+        '<div class="card card-pad flex items-center gap-3" data-rating="r1">'
+        + [1,2,3,4,5].map(i => '<button data-v="' + i + '" class="text-amber transition-transform hover:scale-110" style="font-size:28px">★</button>').join('')
+        + '<span class="text-sm text-muted ml-3" data-rating-out>Click to rate</span></div>')
+
+      + section('2 · Half-star display',
+        '<div class="card card-pad space-y-2">'
+        + [4.5, 3.5, 4.8, 2.5, 5.0].map(v => '<div class="flex items-center gap-2"><div class="relative inline-flex" style="font-size:18px">'
+            + '<div class="text-[rgb(var(--line))]">★★★★★</div>'
+            + '<div class="absolute inset-0 overflow-hidden text-amber" style="width:' + (v * 20) + '%">★★★★★</div>'
+            + '</div><span class="font-mono text-sm">' + v.toFixed(1) + '</span><span class="text-xs text-muted">(' + (Math.floor(Math.random() * 500) + 50) + ' reviews)</span></div>').join('')
         + '</div>')
-      + section('Emoji reactions',
+
+      + section('3 · Big hero rating',
+        '<div class="card card-pad grid grid-cols-1 md:grid-cols-2 gap-6 items-center">'
+        + '<div class="text-center"><div style="font-family:DM Sans;font-size:64px;font-weight:700" class="leading-none">4.8</div><div class="text-amber text-xl mt-2">★★★★★</div><div class="text-xs text-muted mt-1">based on 1,284 reviews</div></div>'
+        + '<div class="space-y-2">' + [5,4,3,2,1].map(s => { const pct = [82,12,4,1,1][5-s]; return '<div class="flex items-center gap-2 text-sm"><span class="w-3 font-mono">' + s + '</span><span class="text-amber">★</span><div class="flex-1 h-2 rounded-full bg-soft overflow-hidden"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,rgb(var(--amber)),rgb(var(--rose)))"></div></div><span class="text-xs text-muted w-10 text-right">' + pct + '%</span></div>'; }).join('') + '</div>'
+        + '</div>')
+
+      + section('4 · Number slider rating',
+        '<div class="card card-pad"><div class="flex justify-between mb-2 text-sm"><span class="text-muted">How likely are you to recommend us?</span><strong class="font-mono">8 / 10</strong></div>'
+        + '<input type="range" min="0" max="10" value="8" class="w-full accent-[rgb(var(--iris))]">'
+        + '<div class="flex justify-between text-[10px] text-muted mt-1"><span>0 Not at all</span><span>10 Very likely</span></div>'
+        + '</div>')
+
+      + section('5 · Hearts (like rating)',
+        '<div class="card card-pad flex items-center gap-2">'
+        + [1,2,3,4,5].map(i => '<button class="' + (i <= 4 ? 'text-rose' : 'text-[rgb(var(--line))]') + ' transition-transform hover:scale-125" style="font-size:24px">♥</button>').join('')
+        + '<span class="text-sm text-muted ml-2">4 / 5</span></div>')
+
+      + section('6 · Review summary card',
+        '<div class="card card-pad max-w-md"><div class="flex items-center gap-3">' + D().avatarFor('Sarah Jenkins') + '<div class="flex-1"><div class="flex items-center justify-between"><strong class="text-sm">Sarah Jenkins</strong><div class="text-amber" style="font-size:14px">★★★★★</div></div><div class="text-xs text-muted">2 weeks ago · Verified buyer</div></div></div>'
+        + '<p class="text-sm mt-3">"VGF26 is the best admin template I\'ve ever used. The gradient cards and dark mode are <em>chef\'s kiss</em>."</p>'
+        + '<div class="flex gap-2 mt-3"><button class="btn btn-ghost btn-xs">' + I_('heart', 14) + ' 24</button><button class="btn btn-ghost btn-xs">' + I_('message-circle', 14) + ' Reply</button></div>'
+        + '</div>')
+
+      + section('7 · Emoji reactions',
         '<div class="card card-pad flex flex-wrap gap-2">'
-        + ['👍 12', '❤️ 8', '🎉 5', '🚀 3', '😂 2', '🤯 1'].map(e => '<button class="pill pill-muted hover:bg-[rgb(var(--iris-soft))]">' + e + '</button>').join('')
-        + '<button class="pill pill-iris">+ Add</button>'
+        + ['👍 12', '❤️ 8', '🎉 5', '🚀 3', '😂 2', '🤯 1'].map(e => '<button class="pill pill-muted hover:bg-[rgb(var(--iris-soft))] cursor-pointer transition-transform hover:scale-110">' + e + '</button>').join('')
+        + '<button class="pill pill-iris cursor-pointer">+ Add</button>'
         + '</div>');
   }
 
@@ -1013,7 +1428,7 @@
     '#/grids':                 viewGrids,
     '#/lists':                 viewLists,
     '#/tables':                viewTables,
-    '#/pagination':            viewTables,
+    /* '#/pagination' is owned by views-extra.js (viewPagination). */
     '#/avatars':               viewAvatars,
     '#/badges':                viewBadges,
     '#/ratings':               viewRatings,

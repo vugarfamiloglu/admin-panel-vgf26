@@ -207,7 +207,7 @@
       '<svg width="260" height="260" viewBox="0 0 240 240">'
       + rings
       + '<polygon points="' + points.map(p => p.join(',')).join(' ') + '" fill="rgb(124 58 237 / .25)" stroke="rgb(124 58 237)" stroke-width="2"/>'
-      + points.map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="rgb(124 58 237)"/>').join('')
+      + points.map((p, i) => '<circle class="chart-point" cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="rgb(124 58 237)" data-v="' + Math.round(data[i].v * 100) + '%" data-l="' + data[i].axis + '"/>').join('')
       + labels
       + '</svg>';
   }
@@ -216,13 +216,15 @@
     const w = host.clientWidth || 600, h = 220, pad = 22;
     const a = DEMO.REV.map((v) => v * 0.85);
     const b = DEMO.REV.map((v) => v * 0.55);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     function path(d, fillId, stroke) {
       const max = Math.max(...d), min = Math.min(...d);
       const xs = d.map((_, i) => pad + (i * (w - pad * 2)) / (d.length - 1));
       const ys = d.map((v) => h - pad - ((v - min) / Math.max(1, max - min)) * (h - pad * 2));
       const p = xs.map((x, i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + ys[i].toFixed(1)).join(' ');
       const area = p + ' L' + xs[xs.length - 1] + ' ' + (h - pad) + ' L' + xs[0] + ' ' + (h - pad) + ' Z';
-      return '<path d="' + area + '" fill="url(#' + fillId + ')"/><path d="' + p + '" stroke="' + stroke + '" stroke-width="2" fill="none"/>';
+      const dots = xs.map((x, i) => '<circle class="chart-point" cx="' + x + '" cy="' + ys[i] + '" r="3.5" fill="#fff" stroke="' + stroke + '" stroke-width="2" data-v="' + Math.round(d[i]).toLocaleString() + '" data-l="' + (months[i % 12]) + '"/>').join('');
+      return '<path d="' + area + '" fill="url(#' + fillId + ')"/><path d="' + p + '" stroke="' + stroke + '" stroke-width="2" fill="none"/>' + dots;
     }
     host.innerHTML =
       '<svg width="100%" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="chart-grid">'
@@ -572,11 +574,11 @@
     svg.setAttribute('height', '100%');
     host.insertBefore(svg, canvas);
 
-    const nodes = []; /* { dom, data, side, level, parent } */
-    const NODE_H = 38; /* approximate */
-    const COL_GAP = 60;
+    const nodes = []; /* { dom, data, side, level, parent, x, y, w, h } */
+    const ROW_GAP   = 14;   /* vertical breathing room between any two rows */
+    const COL_GAP   = 56;   /* gap between depth columns */
+    const PAD_X     = 32;
 
-    /* Split children alternately to left/right of root for radial feel. */
     function side(i) { return i % 2 === 0 ? 'right' : 'left'; }
 
     function createNode(data, level, parent, sideOf) {
@@ -613,71 +615,125 @@
       return true;
     }
 
-    /* Compute layout — split into left and right subtrees, then walk each. */
-    function layout() {
-      /* Determine subtree height (# of leaves * row height) for each visible node. */
-      function leafCount(n) {
-        if (!n.children.length || n.dom.dataset.collapsed === '1') return 1;
-        return n.children.reduce((a, c) => a + leafCount(c), 0);
+    /* Compute the per-depth column width — widest node at each depth. */
+    function depthColumnWidths() {
+      const widths = [];
+      nodes.forEach((n) => {
+        const w = n.dom.offsetWidth || 160;
+        if ((widths[n.level] || 0) < w) widths[n.level] = w;
+      });
+      return widths;
+    }
+
+    /* Tidy-tree style layout — assign y-coordinates via leaf walk,
+     * then place each parent at the vertical midpoint of its children
+     * (or at its own leaf row if the subtree is collapsed). */
+    function layoutSide(roots, dir) {
+      let cursor = 0;
+      function visit(n) {
+        n.h = n.dom.offsetHeight || 38;
+        const collapsed = n.dom.dataset.collapsed === '1';
+        if (!n.children.length || collapsed) {
+          n.y = cursor;
+          cursor += n.h + ROW_GAP;
+          return;
+        }
+        n.children.forEach(visit);
+        const first = n.children[0], last = n.children[n.children.length - 1];
+        n.y = (first.y + last.y + last.h - n.h) / 2;
       }
+      roots.forEach(visit);
+      return cursor; /* total height of this side */
+    }
+
+    function layout() {
       const root = nodes[0];
       const rightKids = root.children.filter((k) => k.side === 'right');
       const leftKids  = root.children.filter((k) => k.side === 'left');
 
-      const rightH = rightKids.reduce((a, c) => a + leafCount(c), 0);
-      const leftH  = leftKids.reduce((a, c) => a + leafCount(c), 0);
-      const totalH = Math.max(rightH, leftH, 1) * (NODE_H + 12);
-      const rootY = totalH / 2 + 40;
+      const cols = depthColumnWidths();
+      const rightH = layoutSide(rightKids, 'right');
+      const leftH  = layoutSide(leftKids,  'left');
+      const totalH = Math.max(rightH, leftH);
 
-      /* Centre the canvas. */
-      const rootW = root.dom.offsetWidth || 160;
-      const cx = host.clientWidth / 2;
-      root.dom.style.left = (cx - rootW / 2) + 'px';
-      root.dom.style.top  = (rootY - 19) + 'px';
+      /* Normalise both sides to start at PAD_X top and centre against the root. */
+      const rootW = cols[0] || (root.dom.offsetWidth || 200);
+      const rootH = root.dom.offsetHeight || 50;
 
-      let cursor = 40;
-      function placeSubtree(n, x, baseY) {
-        const w = n.dom.offsetWidth || 140;
-        n.dom.style.left = (n.side === 'right' ? x : x - w) + 'px';
-        n.dom.style.top  = baseY + 'px';
-        if (n.dom.dataset.collapsed === '1' || !n.children.length) return baseY + NODE_H + 12;
-        let y = baseY - (leafCount(n) - 1) * (NODE_H + 12) / 2 + (NODE_H + 12) / 2;
-        n.children.forEach((c) => {
-          const ny = placeSubtree(c, n.side === 'right' ? x + w + COL_GAP : x - w - COL_GAP, y - NODE_H / 2);
-          y = ny + 6;
-        });
-        return y;
+      /* Shift right side so its mid aligns with the centre of the canvas. */
+      const rightOffset = (totalH - rightH) / 2;
+      const leftOffset  = (totalH - leftH)  / 2;
+      function shift(roots, offset) {
+        function walk(n) {
+          if (!n) return;
+          n.y += offset;
+          if (n.dom.dataset.collapsed !== '1') n.children.forEach(walk);
+        }
+        roots.forEach(walk);
       }
+      shift(rightKids, rightOffset);
+      shift(leftKids,  leftOffset);
 
-      let ry = rootY - (rightH * (NODE_H + 12)) / 2 + (NODE_H + 12) / 2;
-      rightKids.forEach((k) => { ry = placeSubtree(k, cx + rootW / 2 + COL_GAP, ry - NODE_H / 2); ry += 6; });
+      const cx = Math.max(host.clientWidth / 2, rootW / 2 + cols.slice(1).reduce((a, b) => a + b + COL_GAP, 0) + PAD_X);
 
-      let ly = rootY - (leftH * (NODE_H + 12)) / 2 + (NODE_H + 12) / 2;
-      leftKids.forEach((k) => { ly = placeSubtree(k, cx - rootW / 2 - COL_GAP, ly - NODE_H / 2); ly += 6; });
+      /* Root sits centred vertically. */
+      root.x = cx - rootW / 2;
+      root.y = (totalH - rootH) / 2 + PAD_X;
+      root.dom.style.left = root.x + 'px';
+      root.dom.style.top  = root.y + 'px';
 
-      /* Hide / show invisible descendants. */
+      /* Place children — x by column, y already computed. */
+      function place(n, parentX, parentW, dir) {
+        const w = n.dom.offsetWidth || 160;
+        const colW = cols[n.level] || w;
+        if (dir === 'right') {
+          n.x = parentX + parentW + COL_GAP;
+        } else {
+          n.x = parentX - COL_GAP - w;
+        }
+        n.dom.style.left = n.x + 'px';
+        n.dom.style.top  = (n.y + PAD_X) + 'px';
+        if (n.dom.dataset.collapsed === '1') return;
+        n.children.forEach((c) => place(c, n.x, w, dir));
+      }
+      rightKids.forEach((k) => place(k, root.x, rootW, 'right'));
+      leftKids.forEach((k)  => place(k, root.x, rootW, 'left'));
+
+      /* Visibility — collapse hidden subtree. */
       nodes.forEach((n) => { n.dom.style.display = isVisible(n) ? '' : 'none'; });
 
-      /* Set canvas height. */
-      const maxBottom = Math.max(...nodes.filter(isVisible).map((n) => parseFloat(n.dom.style.top || 0) + NODE_H)) + 40;
-      canvas.style.height = maxBottom + 'px';
-      host.style.minHeight = Math.max(520, maxBottom) + 'px';
+      /* Sizing the canvas. */
+      const maxR = Math.max(...nodes.filter(isVisible).map((n) => (n.x || 0) + (n.dom.offsetWidth || 160)));
+      const maxB = Math.max(...nodes.filter(isVisible).map((n) => parseFloat(n.dom.style.top) + (n.dom.offsetHeight || 38)));
+      const minL = Math.min(...nodes.filter(isVisible).map((n) => n.x || 0));
+      const shiftL = minL < PAD_X ? PAD_X - minL : 0;
+      if (shiftL) {
+        nodes.forEach((n) => {
+          if (n.dom.style.display === 'none') return;
+          n.x += shiftL;
+          n.dom.style.left = n.x + 'px';
+        });
+      }
+      const width = Math.max(host.clientWidth, maxR + shiftL + PAD_X);
+      canvas.style.width  = width + 'px';
+      canvas.style.height = (maxB + PAD_X) + 'px';
+      host.style.minHeight = Math.max(540, maxB + PAD_X * 2) + 'px';
 
       /* Draw connectors. */
-      svg.setAttribute('width', host.scrollWidth);
-      svg.setAttribute('height', maxBottom);
+      svg.setAttribute('width', width);
+      svg.setAttribute('height', maxB + PAD_X);
       svg.innerHTML = '<defs><linearGradient id="mm-conn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#d846ef" stop-opacity=".55"/></linearGradient></defs>';
       nodes.forEach((n) => {
         if (!n.parent || !isVisible(n)) return;
-        const pr = n.parent.dom.getBoundingClientRect();
-        const hr = host.getBoundingClientRect();
-        const cr = n.dom.getBoundingClientRect();
-        const x1 = n.side === 'right' ? pr.right - hr.left + host.scrollLeft : pr.left - hr.left + host.scrollLeft;
-        const y1 = pr.top + pr.height / 2 - hr.top + host.scrollTop;
-        const x2 = n.side === 'right' ? cr.left - hr.left + host.scrollLeft : cr.right - hr.left + host.scrollLeft;
-        const y2 = cr.top + cr.height / 2 - hr.top + host.scrollTop;
-        const cx1 = (x1 + x2) / 2;
-        const path = 'M' + x1 + ' ' + y1 + ' C ' + cx1 + ' ' + y1 + ', ' + cx1 + ' ' + y2 + ', ' + x2 + ' ' + y2;
+        const pw = n.parent.dom.offsetWidth, ph = n.parent.dom.offsetHeight;
+        const cw = n.dom.offsetWidth,         ch = n.dom.offsetHeight;
+        const py = parseFloat(n.parent.dom.style.top) + ph / 2;
+        const cy = parseFloat(n.dom.style.top)        + ch / 2;
+        let x1, x2;
+        if (n.side === 'right') { x1 = n.parent.x + pw; x2 = n.x; }
+        else                    { x1 = n.parent.x;     x2 = n.x + cw; }
+        const mx = (x1 + x2) / 2;
+        const path = 'M' + x1 + ' ' + py + ' C ' + mx + ' ' + py + ', ' + mx + ' ' + cy + ', ' + x2 + ' ' + cy;
         const p = document.createElementNS(svgNS, 'path');
         p.setAttribute('d', path);
         p.setAttribute('stroke', 'url(#mm-conn)');
@@ -688,8 +744,9 @@
     }
 
     createNode(root, 0, null, 'right');
-    /* layout twice — first pass measures, second pass uses measured widths. */
-    requestAnimationFrame(() => { layout(); requestAnimationFrame(layout); });
+    /* Three passes — first lays everything out at default size, second
+     * uses measured widths, third re-runs after fonts settle. */
+    requestAnimationFrame(() => { layout(); requestAnimationFrame(() => { layout(); requestAnimationFrame(layout); }); });
     window.addEventListener('resize', () => layout());
   }
 
